@@ -1,0 +1,41 @@
+// GitUI key bindings - Vim style navigation
+// Place this file at ~/.config/gitui/key_bindings.ron
+
+(
+    // Movement
+    move_left: Some(( code: Char('h'), modifiers: "")),
+    move_right: Some(( code: Char('l'), modifiers: "")),
+    move_up: Some(( code: Char('k'), modifiers: "")),
+    move_down: Some(( code: Char('j'), modifiers: "")),
+    
+    // Page navigation
+    page_up: Some(( code: Char('b'), modifiers: "CONTROL")),
+    page_down: Some(( code: Char('f'), modifiers: "CONTROL")),
+    home: Some(( code: Char('g'), modifiers: "")),
+    end: Some(( code: Char('G'), modifiers: "SHIFT")),
+    
+    // Scrolling
+    shift_up: Some(( code: Char('K'), modifiers: "SHIFT")),
+    shift_down: Some(( code: Char('J'), modifiers: "SHIFT")),
+    
+    // Tree navigation
+    tree_collapse_recursive: Some(( code: Left, modifiers: "SHIFT")),
+    tree_expand_recursive: Some(( code: Right, modifiers: "SHIFT")),
+    
+    // File operations
+    edit_file: Some(( code: Char('e'), modifiers: "")),
+    status_stage_all: Some(( code: Char('a'), modifiers: "")),
+    status_reset_item: Some(( code: Char('U'), modifiers: "SHIFT")),
+    
+    // Diff operations
+    diff_stage_lines: Some(( code: Char('s'), modifiers: "")),
+    diff_reset_lines: Some(( code: Char('u'), modifiers: "")),
+    
+    // Stashing
+    stashing_save: Some(( code: Char('w'), modifiers: "")),
+    stashing_toggle_index: Some(( code: Char('i'), modifiers: "")),
+    
+    // Other
+    quit: Some(( code: Char('q'), modifiers: "")),
+    quit_vim: Some(( code: Esc, modifiers: "")),
+)

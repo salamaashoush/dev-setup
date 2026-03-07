@@ -1,0 +1,28 @@
+// Dev Layout - Main editor with terminal below
+// Usage: zellij --layout dev
+
+layout {
+    pane size=1 borderless=true {
+        plugin location="zellij:tab-bar"
+    }
+    pane split_direction="vertical" {
+        pane size="70%" {
+            // Main editor pane
+            focus true
+            name "editor"
+        }
+        pane size="30%" split_direction="horizontal" {
+            pane size="60%" {
+                // Terminal for running commands
+                name "terminal"
+            }
+            pane size="40%" {
+                // Git or logs
+                name "git/logs"
+            }
+        }
+    }
+    pane size=2 borderless=true {
+        plugin location="zellij:status-bar"
+    }
+}

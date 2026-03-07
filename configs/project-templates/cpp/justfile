@@ -1,0 +1,27 @@
+default:
+    @just --list
+
+# Configure the build
+configure:
+    cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+
+# Build the project
+build:
+    cmake --build build
+
+# Run the executable
+run: build
+    ./build/PROJECT_NAME
+
+# Clean build artifacts
+clean:
+    rm -rf build
+
+# Format code
+format:
+    find src include -name "*.cpp" -o -name "*.hpp" -o -name "*.h" | xargs clang-format -i
+
+# Build release version
+release:
+    cmake -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+    cmake --build build-release

@@ -1,0 +1,127 @@
+[
+  // Quick file navigation
+  {
+    "key": "cmd+p",
+    "command": "workbench.action.quickOpen",
+    "when": "isMac"
+  },
+  {
+    "key": "ctrl+p",
+    "command": "workbench.action.quickOpen",
+    "when": "isLinux"
+  },
+  
+  // Command palette
+  {
+    "key": "cmd+shift+p",
+    "command": "workbench.action.showCommands",
+    "when": "isMac"
+  },
+  {
+    "key": "ctrl+shift+p",
+    "command": "workbench.action.showCommands",
+    "when": "isLinux"
+  },
+  
+  // AI Chat (Cursor specific, ignored in VS Code)
+  {
+    "key": "cmd+k",
+    "command": "cursor.chat.open",
+    "when": "isMac"
+  },
+  {
+    "key": "ctrl+k",
+    "command": "cursor.chat.open",
+    "when": "isLinux"
+  },
+  
+  // Terminal
+  {
+    "key": "cmd+`",
+    "command": "workbench.action.terminal.toggleTerminal",
+    "when": "isMac"
+  },
+  {
+    "key": "ctrl+`",
+    "command": "workbench.action.terminal.toggleTerminal",
+    "when": "isLinux"
+  },
+  
+  // File explorer
+  {
+    "key": "cmd+shift+e",
+    "command": "workbench.view.explorer",
+    "when": "isMac"
+  },
+  {
+    "key": "ctrl+shift+e",
+    "command": "workbench.view.explorer",
+    "when": "isLinux"
+  },
+  
+  // Search
+  {
+    "key": "cmd+shift+f",
+    "command": "workbench.action.findInFiles",
+    "when": "isMac"
+  },
+  {
+    "key": "ctrl+shift+f",
+    "command": "workbench.action.findInFiles",
+    "when": "isLinux"
+  },
+  
+  // Format document
+  {
+    "key": "shift+alt+f",
+    "command": "editor.action.formatDocument"
+  },
+  
+  // Rename symbol
+  {
+    "key": "f2",
+    "command": "editor.action.rename"
+  },
+  
+  // Go to definition
+  {
+    "key": "f12",
+    "command": "editor.action.revealDefinition"
+  },
+  
+  // Multi-cursor
+  {
+    "key": "cmd+d",
+    "command": "editor.action.addSelectionToNextFindMatch",
+    "when": "isMac"
+  },
+  {
+    "key": "ctrl+d",
+    "command": "editor.action.addSelectionToNextFindMatch",
+    "when": "isLinux"
+  },
+  
+  // Line operations
+  {
+    "key": "cmd+shift+k",
+    "command": "editor.action.deleteLines",
+    "when": "isMac && textInputFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+shift+k",
+    "command": "editor.action.deleteLines",
+    "when": "isLinux && textInputFocus && !editorReadonly"
+  },
+  
+  // Duplicate line
+  {
+    "key": "shift+alt+down",
+    "command": "editor.action.copyLinesDownAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "shift+alt+up",
+    "command": "editor.action.copyLinesUpAction",
+    "when": "editorTextFocus && !editorReadonly"
+  }
+]

@@ -1,0 +1,264 @@
+/**
+ * Tokyo Night Storm theme for Rofi
+ * Optimized for Wayland + KDE Plasma 6
+ */
+
+configuration {
+    /* Mode Configuration */
+    modi: "drun,run,window,filebrowser,ssh,keys";
+    font: "CaskaydiaCove Nerd Font 13";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    terminal: "ghostty";
+
+    /* Display Names */
+    display-drun: "  Apps";
+    display-run: "  Run";
+    display-window: "  Windows";
+    display-ssh: "  SSH";
+    display-filebrowser: "  Files";
+    display-keys: "  Keys";
+
+    /* Format Settings */
+    drun-display-format: "{name}";
+    window-format: "{w} · {c} · {t:30}";
+
+    /* Search Behavior */
+    matching: "fuzzy";
+    tokenize: true;
+    sort: true;
+    sorting-method: "fzf";
+    case-sensitive: false;
+
+    /* Performance */
+    threads: 0;
+    scroll-method: 1;
+
+    /* UI Behavior */
+    cycle: true;
+    steal-focus: false;
+    click-to-exit: true;
+
+    /* Window Settings - Wayland optimized */
+    /* Note: -normal-window is broken on Wayland, use layer-shell */
+    location: 0;
+    anchor: 0;
+
+    /* Display Settings */
+    fixed-num-lines: false;
+
+    /* History and Cache */
+    disable-history: false;
+    max-history-size: 50;
+
+    /* Sidebar & Hover */
+    sidebar-mode: false;
+    hover-select: true;
+
+    /* DRun Settings */
+    drun-match-fields: "name,generic,exec,categories,keywords";
+    drun-show-actions: false;
+    drun-url-launcher: "xdg-open";
+    drun-use-desktop-cache: true;
+    drun-reload-desktop-cache: false;
+
+    /* Run Settings */
+    run-command: "{cmd}";
+    run-shell-command: "{terminal} -e {cmd}";
+
+    /* File Browser */
+    filebrowser {
+        directories-first: true;
+        sorting-method: "name";
+    }
+
+    /* Keybindings - Vim-style navigation */
+    kb-row-up: "Up,Control+k,Control+p";
+    kb-row-down: "Down,Control+j,Control+n";
+    kb-accept-entry: "Return,KP_Enter";
+    kb-remove-to-eol: "Control+Shift+e";
+    kb-mode-next: "Shift+Right,Control+Tab,Alt+l";
+    kb-mode-previous: "Shift+Left,Control+ISO_Left_Tab,Alt+h";
+    kb-mode-complete: "Control+l";
+    kb-cancel: "Escape,Control+g,Control+bracketleft";
+    kb-page-prev: "Page_Up,Control+u";
+    kb-page-next: "Page_Down,Control+d";
+    kb-row-first: "Home,Control+Home,Alt+g";
+    kb-row-last: "End,Control+End,Alt+Shift+g";
+    kb-clear-line: "Control+w";
+    kb-remove-char-forward: "Delete";
+    kb-remove-to-sol: "Control+Shift+u";
+    kb-move-front: "Control+a";
+    kb-move-end: "Control+e";
+    kb-delete-entry: "Shift+Delete";
+    kb-screenshot: "Alt+Shift+s";
+
+    /* Timeout */
+    timeout {
+        delay: 0;
+        action: "kb-cancel";
+    }
+}
+
+/* Tokyo Night Storm Color Palette */
+* {
+    /* Base colors */
+    bg0: #1f2335;
+    bg1: #24283b;
+    bg2: #292e42;
+    bg3: #3b4261;
+
+    /* Foreground */
+    fg0: #c0caf5;
+    fg1: #a9b1d6;
+    fg2: #565f89;
+
+    /* Accents */
+    blue: #7aa2f7;
+    cyan: #7dcfff;
+    green: #9ece6a;
+    red: #f7768e;
+    purple: #bb9af7;
+    orange: #ff9e64;
+    yellow: #e0af68;
+
+    /* Semantic */
+    accent: @blue;
+    urgent: @red;
+
+    /* Base */
+    background-color: transparent;
+    text-color: @fg0;
+}
+
+window {
+    background-color: @bg0;
+    border: 2px solid;
+    border-color: @accent;
+    border-radius: 12px;
+    width: 600px;
+    padding: 0;
+    location: center;
+}
+
+mainbox {
+    background-color: transparent;
+    children: [ inputbar, listview ];
+    padding: 16px;
+    spacing: 12px;
+}
+
+inputbar {
+    background-color: @bg2;
+    border-radius: 8px;
+    padding: 12px 16px;
+    spacing: 12px;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color: @accent;
+    font: "CaskaydiaCove Nerd Font Bold 13";
+}
+
+entry {
+    background-color: transparent;
+    text-color: @fg0;
+    placeholder: "Search...";
+    placeholder-color: @fg2;
+    cursor: text;
+}
+
+listview {
+    background-color: transparent;
+    lines: 8;
+    columns: 1;
+    spacing: 4px;
+    scrollbar: false;
+    fixed-height: false;
+}
+
+element {
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 10px 12px;
+    spacing: 12px;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @fg0;
+}
+
+element selected.normal {
+    background-color: @bg3;
+    text-color: @fg0;
+    border: 1px solid;
+    border-color: @accent;
+}
+
+element alternate.normal {
+    background-color: transparent;
+    text-color: @fg0;
+}
+
+element normal.urgent,
+element alternate.urgent {
+    background-color: @urgent;
+    text-color: @bg0;
+}
+
+element selected.urgent {
+    background-color: @urgent;
+    text-color: @bg0;
+}
+
+element normal.active,
+element alternate.active {
+    background-color: @green;
+    text-color: @bg0;
+}
+
+element selected.active {
+    background-color: @green;
+    text-color: @bg0;
+}
+
+element-icon {
+    background-color: transparent;
+    size: 24px;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    highlight: bold;
+}
+
+scrollbar {
+    width: 4px;
+    handle-color: @accent;
+    handle-width: 4px;
+    background-color: @bg2;
+}
+
+message {
+    background-color: @bg2;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: @fg1;
+}
+
+error-message {
+    background-color: @bg0;
+    text-color: @urgent;
+    border: 2px solid;
+    border-color: @urgent;
+    border-radius: 8px;
+    padding: 16px;
+}

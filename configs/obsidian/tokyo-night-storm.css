@@ -1,0 +1,39 @@
+/* Tokyo Night Storm theme for Obsidian */
+.theme-dark {
+  --background-primary: #24283b;
+  --background-primary-alt: #1f2335;
+  --background-secondary: #292e42;
+  --background-secondary-alt: #343b59;
+  --background-modifier-border: #3b4261;
+  --background-modifier-form-field: #292e42;
+  --background-modifier-form-field-highlighted: #343b59;
+  --background-modifier-box-shadow: rgba(0, 0, 0, 0.3);
+  --background-modifier-success: #9ece6a;
+  --background-modifier-success-rgb: 158, 206, 106;
+  --background-modifier-error: #f7768e;
+  --background-modifier-error-rgb: 247, 118, 142;
+  --background-modifier-error-hover: #f7768e;
+  --background-modifier-cover: rgba(0, 0, 0, 0.8);
+  --text-accent: #7aa2f7;
+  --text-accent-hover: #7dcfff;
+  --text-normal: #c0caf5;
+  --text-muted: #787c99;
+  --text-muted-rgb: 120, 124, 153;
+  --text-faint: #545c7e;
+  --text-error: #f7768e;
+  --text-error-hover: #f7768e;
+  --text-highlight-bg: rgba(122, 162, 247, 0.4);
+  --text-highlight-bg-active: rgba(122, 162, 247, 0.6);
+  --text-selection: rgba(122, 162, 247, 0.3);
+  --text-on-accent: #1f2335;
+  --interactive-normal: #292e42;
+  --interactive-hover: #343b59;
+  --interactive-accent: #7aa2f7;
+  --interactive-accent-rgb: 122, 162, 247;
+  --interactive-accent-hover: #7dcfff;
+  --interactive-success: #9ece6a;
+  --scrollbar-active-thumb-bg: rgba(255, 255, 255, 0.2);
+  --scrollbar-bg: rgba(255, 255, 255, 0.05);
+  --scrollbar-thumb-bg: rgba(255, 255, 255, 0.1);
+  --highlight-mix-blend-mode: lighten;
+}

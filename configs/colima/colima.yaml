@@ -1,0 +1,137 @@
+# Colima configuration with performance optimizations
+# This file will be copied to ~/.colima/default/colima.yaml
+
+# CPU cores allocated to VM
+# Set to half of system cores (adjust based on your Mac's CPU)
+cpu: 4
+
+# Memory in GiB
+# Set to ~50% of system RAM for balanced performance
+memory: 8
+
+# Disk size in GiB
+disk: 100
+
+# VM type
+# - vz: uses macOS Virtualization.Framework (Apple Silicon recommended)
+# - qemu: uses QEMU (Intel Macs)
+vmType: vz
+
+# Mount type for volume mounts
+# - virtiofs: better performance (Apple Silicon recommended)
+# - 9p: fallback option
+# - sshfs: most compatible but slower
+mountType: virtiofs
+
+# Enable inotify propagation for better file watching
+# This helps with hot-reload in development
+mountInotify: true
+
+# Runtime to use (docker or containerd)
+runtime: docker
+
+# Docker daemon configuration
+docker:
+  # Additional daemon config
+  config:
+    # Enable experimental features (required for buildx)
+    experimental: true
+    # Enable BuildKit by default
+    features:
+      buildkit: true
+    # Default address pools for networks
+    default-address-pools:
+      - base: "172.17.0.0/16"
+        size: 24
+      - base: "172.18.0.0/16"
+        size: 24
+    # Storage driver
+    storage-driver: overlay2
+    # Log configuration
+    log-driver: json-file
+    log-opts:
+      max-size: "10m"
+      max-file: "3"
+    # Performance optimizations
+    max-concurrent-downloads: 10
+    max-concurrent-uploads: 10
+    # Registry mirrors for faster pulls (add your preferred mirrors)
+    registry-mirrors: []
+    # Increase default ulimits
+    default-ulimits:
+      nofile:
+        Hard: 1048576
+        Soft: 1048576
+
+# Network configuration
+network:
+  # Assign an IP address to the VM
+  address: true
+  # DNS servers (uses system default if empty)
+  dns: []
+  # Enable host addresses replication for better port forwarding
+  hostAddresses: true
+
+# SSH configuration
+# Disable SSH config modification to avoid conflicts
+sshConfig: false
+
+# Forward SSH agent for git operations
+forwardAgent: true
+
+# Port forwarding
+# Example:
+# - guest: 8080
+#   host: 8080
+#   protocol: tcp
+portForwards: []
+
+# Environment variables for the VM
+env:
+  # Optimize container runtime
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+
+# Volume mounts configuration
+# Default mounts are optimized, add custom mounts as needed
+mounts:
+  # Example: Mount projects directory with write access
+  # - location: ~/projects
+  #   writable: true
+  # Example: Mount read-only secrets
+  # - location: ~/.ssh
+  #   writable: false
+
+# Kubernetes configuration
+kubernetes:
+  # Enable kubernetes
+  enabled: false
+  # Kubernetes version
+  version: v1.28.3+k3s2
+
+# Auto-activate configuration
+autoActivate: true
+
+# Rosetta configuration for Apple Silicon
+# Enables x86_64 emulation
+rosetta: true
+
+# Enable nested virtualization for M3 Macs
+# Only enable if you have M3 chip and need to run VMs inside containers
+nestedVirtualization: false
+
+# Additional VM flags
+vmArgs: []
+
+# Custom provision scripts
+# Example: Install common tools in the VM
+provision:
+  # - mode: system
+  #   script: |
+  #     # Install useful packages
+  #     apt-get update && apt-get install -y \
+  #       htop \
+  #       vim \
+  #       curl \
+  #       wget \
+  #       git

@@ -1,0 +1,67 @@
+# Topgrade configuration
+# https://github.com/topgrade-rs/topgrade
+
+# Don't ask for confirmations (no GUI)
+assume_yes = true
+
+# Disable sections that require interaction
+disable = ["node", "firmware", "restarts"]
+
+# Commands to run before anything
+[pre_commands]
+# "echo 'Starting system upgrade...'"
+
+# Commands to run after everything
+[post_commands]
+# "echo 'System upgrade complete!'"
+
+# Custom commands
+[commands]
+# "Custom Update" = "echo 'Running custom update'"
+
+# Cleanup after update
+cleanup = true
+
+# Run garbage collection for package managers
+[linux]
+# Arch Linux
+arch_package_manager = "yay"
+show_arch_news = true
+
+[brew]
+# Homebrew options
+greedy_cask = true
+autoremove = true
+
+[git]
+# Pull git repositories
+pull_predefined = false
+# repos = [
+#     "~/Projects/*"
+# ]
+
+[npm]
+# Use pnpm if available
+use_pnpm = true
+
+[cargo]
+# Update Rust packages installed via cargo
+enabled = true
+
+[python]
+# Update Python packages
+enabled = true
+pip3_arguments = "--user"
+
+[go]
+# Update Go packages
+enabled = true
+
+[vim]
+# Update vim/neovim plugins
+enabled = true
+
+# Skip updates for these items
+[ignore]
+# repos = ["~/some/repo"]
+# packages = ["some-package"]

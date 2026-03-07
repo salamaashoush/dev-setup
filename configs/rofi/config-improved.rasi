@@ -1,0 +1,249 @@
+/**
+ * Tokyo Night Storm theme for Rofi
+ * Improved version with better styling and compatibility
+ */
+
+configuration {
+    modi: "drun,run,window,ssh";
+    font: "CaskaydiaCove Nerd Font 14";
+    show-icons: true;
+    icon-theme: "Papirus";
+    display-drun: "Apps";
+    display-run: "Run";
+    display-window: "Windows";
+    display-ssh: "SSH";
+    drun-display-format: "{name}";
+    window-format: "{w} {t}";
+    
+    /* Behavior */
+    matching: "fuzzy";
+    sort: true;
+    sorting-method: "fzf";
+    case-sensitive: false;
+    cycle: true;
+    steal-focus: true;
+    
+    /* Window settings */
+    location: 0;
+    anchor: 0;
+    width: 40%;
+    lines: 12;
+    columns: 1;
+    
+    /* Keybindings - simplified to avoid conflicts */
+    kb-primary-paste: "Control+V,Shift+Insert";
+    kb-secondary-paste: "Control+y";
+    kb-clear-line: "Control+w";
+    kb-move-front: "Control+a";
+    kb-move-end: "Control+e";
+    kb-move-word-back: "Alt+b";
+    kb-move-word-forward: "Alt+f";
+    kb-move-char-back: "Left,Control+b";
+    kb-move-char-forward: "Right,Control+f";
+    kb-remove-char-forward: "Delete,Control+d";
+    kb-remove-char-back: "BackSpace,Control+h";
+    kb-accept-entry: "Control+m,Return,KP_Enter";
+    kb-row-up: "Up,Control+p";
+    kb-row-down: "Down,Control+n,Control+j";
+    kb-page-prev: "Page_Up";
+    kb-page-next: "Page_Down";
+    kb-row-first: "Home,KP_Home";
+    kb-row-last: "End,KP_End";
+    kb-cancel: "Escape,Control+g,Control+bracketleft";
+}
+
+/* Tokyo Night Storm Color Palette */
+* {
+    /* Background colors */
+    bg0: #24283b;
+    bg1: #1f2335;
+    bg2: #292e42;
+    bg3: #343b59;
+    bg4: #3b4261;
+    
+    /* Foreground colors */
+    fg0: #c0caf5;
+    fg1: #a9b1d6;
+    fg2: #787c99;
+    fg3: #545c7e;
+    
+    /* Accent colors */
+    red: #f7768e;
+    orange: #ff9e64;
+    yellow: #e0af68;
+    green: #9ece6a;
+    cyan: #7dcfff;
+    blue: #7aa2f7;
+    purple: #bb9af7;
+    magenta: #c0caf5;
+    
+    /* Theme colors */
+    background-color: transparent;
+    text-color: @fg0;
+    accent-color: @blue;
+    border-color: @bg4;
+    selected-color: @bg3;
+    urgent-color: @red;
+    active-color: @green;
+}
+
+window {
+    transparency: "real";
+    background-color: @bg1;
+    text-color: @fg0;
+    border: 2px solid;
+    border-color: @accent-color;
+    border-radius: 12px;
+    padding: 0px;
+    location: center;
+    anchor: center;
+}
+
+mainbox {
+    background-color: transparent;
+    children: [ inputbar, listview ];
+    spacing: 0px;
+    padding: 20px;
+}
+
+inputbar {
+    background-color: @bg2;
+    text-color: @fg0;
+    border: 0px;
+    border-radius: 8px;
+    padding: 12px 16px;
+    spacing: 12px;
+    children: [ prompt, entry ];
+    margin: 0px 0px 20px 0px;
+}
+
+prompt {
+    background-color: transparent;
+    text-color: @accent-color;
+    font: "CaskaydiaCove Nerd Font Bold 14";
+    vertical-align: 0.5;
+}
+
+entry {
+    background-color: transparent;
+    text-color: @fg0;
+    placeholder-color: @fg2;
+    expand: true;
+    horizontal-align: 0;
+    placeholder: "Search applications...";
+    blink: true;
+    cursor: text;
+}
+
+listview {
+    background-color: transparent;
+    columns: 1;
+    lines: 8;
+    spacing: 4px;
+    cycle: false;
+    dynamic: true;
+    layout: vertical;
+    reverse: false;
+    fixed-height: true;
+    border: 0px;
+    scrollbar: false;
+}
+
+element {
+    background-color: transparent;
+    text-color: @fg0;
+    orientation: horizontal;
+    border-radius: 8px;
+    padding: 12px;
+    spacing: 12px;
+    border: 0px;
+    cursor: pointer;
+}
+
+element-icon {
+    background-color: transparent;
+    size: 28px;
+    cursor: inherit;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    expand: true;
+    horizontal-align: 0;
+    vertical-align: 0.5;
+    cursor: inherit;
+    highlight: bold @accent-color;
+}
+
+element.normal.normal {
+    background-color: transparent;
+    text-color: @fg0;
+}
+
+element.normal.urgent {
+    background-color: @urgent-color;
+    text-color: @bg0;
+}
+
+element.normal.active {
+    background-color: @active-color;
+    text-color: @bg0;
+}
+
+element.selected.normal {
+    background-color: @selected-color;
+    text-color: @fg0;
+    border: 1px solid @accent-color;
+}
+
+element.selected.urgent {
+    background-color: @urgent-color;
+    text-color: @bg0;
+}
+
+element.selected.active {
+    background-color: @active-color;
+    text-color: @bg0;
+}
+
+element.alternate.normal {
+    background-color: transparent;
+    text-color: @fg0;
+}
+
+element.alternate.urgent {
+    background-color: @urgent-color;
+    text-color: @bg0;
+}
+
+element.alternate.active {
+    background-color: @active-color;
+    text-color: @bg0;
+}
+
+/* Scrollbar styling */
+scrollbar {
+    width: 4px;
+    border: 0px;
+    handle-color: @accent-color;
+    handle-width: 8px;
+    padding: 0px;
+}
+
+/* Error message styling */
+error-message {
+    background-color: @bg1;
+    text-color: @urgent-color;
+    border: 2px solid @urgent-color;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: inherit;
+    vertical-align: 0.5;
+    horizontal-align: 0;
+    highlight: none;
+}

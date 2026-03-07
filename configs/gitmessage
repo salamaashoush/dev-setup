@@ -1,0 +1,45 @@
+# <type>(<scope>): <subject>
+
+# <body>
+
+# <footer>
+
+# Type should be one of the following:
+# * feat (new feature for the user)
+# * fix (bug fix for the user)
+# * docs (changes to documentation)
+# * style (formatting, missing semicolons, etc; no production code change)
+# * refactor (refactoring production code, eg. renaming a variable)
+# * test (adding missing tests, refactoring tests; no production code change)
+# * chore (updating build tasks, package manager configs, etc; no production code change)
+# * perf (performance improvements)
+# * build (changes that affect the build system or external dependencies)
+# * ci (changes to CI configuration files and scripts)
+# * revert (reverting a previous commit)
+#
+# Scope is optional and can be anything specifying the place of the commit change.
+# For example: auth, api, frontend, backend, etc.
+#
+# Subject is a short description (max 50 chars):
+# - use imperative, present tense: "change" not "changed" nor "changes"
+# - don't capitalize first letter
+# - no dot (.) at the end
+#
+# Body should include motivation for the change and contrast with previous behavior
+# - wrap at 72 characters
+# - can use multiple paragraphs
+#
+# Footer should contain any information about Breaking Changes and is also
+# the place to reference GitHub/Jira issues that this commit closes
+#
+# Breaking Changes should start with the word BREAKING CHANGE: with a space or
+# two newlines. The rest of the commit message is then used for this.
+#
+# Example:
+# feat(auth): add OAuth2 integration
+#
+# Add support for OAuth2 authentication with Google and GitHub providers.
+# This allows users to sign in using their existing accounts.
+#
+# BREAKING CHANGE: The old password-based auth API has been removed.
+# Closes: SIGN-1234

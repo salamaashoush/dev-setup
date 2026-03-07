@@ -1,0 +1,42 @@
+# Logs
+*.log
+.dev-setup.log
+
+# User cache
+.dev-setup-user-cache
+
+# Backups
+*.backup
+*.backup-*
+.config-backup-*
+.dev-setup-backup/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+install-zinit-plugins.zsh
+
+# Local configuration
+local.conf
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+test-results/
+coverage/
+
+# Build artifacts
+build/
+dist/
+
+# OS specific
+Thumbs.db
+.DS_Store

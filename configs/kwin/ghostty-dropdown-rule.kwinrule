@@ -1,0 +1,16 @@
+[dropdown-terminal]
+Description=Ghostty Dropdown Terminal
+above=true
+aboverule=2
+clientmachine=localhost
+noborder=true
+noborderrule=2
+position=0,0
+positionrule=3
+size=100,40
+sizerule=3
+title=dropdown-terminal
+titlematch=1
+types=1
+wmclass=com.mitchellh.ghostty
+wmclassmatch=1

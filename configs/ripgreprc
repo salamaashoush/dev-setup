@@ -1,0 +1,56 @@
+# Ripgrep configuration file
+# Location: ~/.ripgreprc
+
+# Always use smart case searching
+--smart-case
+
+# Always use line numbers
+--line-number
+
+# Always use colors
+--color=always
+
+# Use a custom color scheme
+--colors=line:fg:yellow
+--colors=line:style:bold
+--colors=path:fg:green
+--colors=path:style:bold
+--colors=match:fg:black
+--colors=match:bg:yellow
+--colors=match:style:nobold
+
+# Set default type inclusions
+--type-add=web:*.{html,css,js,jsx,ts,tsx,vue,svelte}
+--type-add=config:*.{json,yaml,yml,toml,ini,conf}
+--type-add=doc:*.{md,txt,org,rst}
+
+# Common ignore patterns
+--glob=!.git/*
+--glob=!node_modules/*
+--glob=!.next/*
+--glob=!.nuxt/*
+--glob=!dist/*
+--glob=!build/*
+--glob=!.vscode/*
+--glob=!.idea/*
+--glob=!*.min.js
+--glob=!*.min.css
+--glob=!package-lock.json
+--glob=!yarn.lock
+--glob=!.DS_Store
+--glob=!*.log
+
+# Maximum columns to display
+--max-columns=150
+
+# Maximum file size to search (in bytes)
+--max-filesize=1M
+
+# Show context around matches
+--context=2
+
+# Use multiline search by default for some patterns
+--multiline-dotall
+
+# Enable hyperlinks if supported
+--hyperlink-format=default

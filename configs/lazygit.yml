@@ -1,0 +1,274 @@
+# Lazygit configuration for enhanced git workflow
+# https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
+
+gui:
+  # Tokyo Night Storm theme
+  theme:
+    lightTheme: false
+    activeBorderColor:
+      - '#7aa2f7'
+      - bold
+    inactiveBorderColor:
+      - '#545c7e'
+    optionsTextColor:
+      - '#7aa2f7'
+    selectedLineBgColor:
+      - '#283457'
+    selectedRangeBgColor:
+      - '#283457'
+    cherryPickedCommitBgColor:
+      - '#9ece6a'
+    cherryPickedCommitFgColor:
+      - '#1a1b26'
+    unstagedChangesColor:
+      - '#db4b4b'
+    defaultFgColor:
+      - '#c0caf5'
+    searchingActiveBorderColor:
+      - '#bb9af7'
+  nerdFontsVersion: "3"
+  # Window settings
+  screenMode: 'normal'
+  scrollHeight: 2
+  scrollPastBottom: true
+  mouseEvents: true
+  skipDiscardChangeWarning: false
+  skipStashWarning: false
+  showFileTree: true
+  showListFooter: true
+  showRandomTip: true
+  showBranchCommitHash: false
+  showBottomLine: true
+  showCommandLog: true
+  showIcons: true
+  commandLogSize: 8
+  splitDiff: 'auto'
+  # Diff settings
+  skipHookPrefix: WIP
+  skipRewordInEditorWarning: false
+  border: 'rounded'
+  animateExplosion: true
+  portraitMode: 'auto'
+  filterMode: 'substring'
+  # Experimental features
+  experimentalShowBranchHeads: false
+git:
+  # Git configuration
+  paging:
+    colorArg: always
+    pager: delta --dark --paging=never
+  # Commit settings
+  commit:
+    signOff: false
+    verbose: default
+  # Merge settings
+  merging:
+    manualCommit: false
+    args: ''
+  # Log settings
+  log:
+    order: 'topo-order'
+    showGraph: 'when-maximised'
+    showWholeGraph: false
+  # Skip hooks
+  skipHookPrefix: WIP
+  # Auto-fetch
+  autoFetch: true
+  autoRefresh: true
+  fetchAll: true
+  branchLogCmd: 'git log --graph --color=always --abbrev-commit --decorate --date=relative --pretty=medium {{branchName}} --'
+  overrideGpg: false
+  disableForcePushing: false
+  parseEmoji: false
+  # Diff context lines
+  diffContextSize: 3
+  allBranchesLogCmds:
+    - git log --graph --all --color=always --abbrev-commit --decorate --date=relative --pretty=medium
+update:
+  method: prompt
+  days: 14
+refresher:
+  refreshInterval: 10
+  fetchInterval: 60
+confirmOnQuit: false
+quitOnTopLevelReturn: false
+disableStartupPopups: false
+# Custom commands
+customCommands:
+  - key: 'C'
+    command: 'git cz'
+    description: 'commit with commitizen'
+    context: 'files'
+    loadingText: 'opening commitizen commit tool'
+    output: terminal
+  - key: 'T'
+    command: 'git log --oneline --decorate --graph --all'
+    description: 'git tree'
+    context: 'global'
+  - key: '<c-r>'
+    command: 'gh pr create --fill'
+    description: 'create pull request'
+    context: 'global'
+    output: terminal
+  - key: '<c-v>'
+    command: 'gh pr view --web'
+    description: 'view pull request'
+    context: 'global'
+    output: terminal
+# OS settings
+os:
+  editPreset: 'nvim'
+  openDirInEditor: 'nvim {{dir}}'
+  openFileInEditor: 'nvim {{filename}}'
+  open: 'open {{filename}}'
+  openLink: 'open {{link}}'
+# Services
+services:
+  github.com: 'gh:{{.Owner}}/{{.Repository}}'
+  gitlab.com: 'gl:{{.Owner}}/{{.Repository}}'
+  bitbucket.org: 'bb:{{.Owner}}/{{.Repository}}'
+# Keybindings
+keybinding:
+  universal:
+    quit: 'q'
+    quit-alt1: '<c-c>'
+    return: '<esc>'
+    quitWithoutChangingDirectory: 'Q'
+    togglePanel: '<tab>'
+    prevItem: '<up>'
+    nextItem: '<down>'
+    prevItem-alt: 'k'
+    nextItem-alt: 'j'
+    prevPage: ','
+    nextPage: '.'
+    scrollLeft: 'H'
+    scrollRight: 'L'
+    gotoTop: '<'
+    gotoBottom: '>'
+    toggleRangeSelect: 'v'
+    rangeSelectDown: '<s-down>'
+    rangeSelectUp: '<s-up>'
+    prevBlock: '<left>'
+    nextBlock: '<right>'
+    prevBlock-alt: 'h'
+    nextBlock-alt: 'l'
+    new: 'n'
+    edit: 'e'
+    openFile: 'o'
+    scrollUpMain: '<pgup>'
+    scrollDownMain: '<pgdown>'
+    scrollUpMain-alt1: 'K'
+    scrollDownMain-alt1: 'J'
+    scrollUpMain-alt2: '<c-u>'
+    scrollDownMain-alt2: '<c-d>'
+    executeShellCommand: ':'
+    createRebaseOptionsMenu: 'm'
+    pushFiles: 'P'
+    pullFiles: 'p'
+    refresh: 'R'
+    createPatchOptionsMenu: '<c-p>'
+    nextTab: ']'
+    prevTab: '['
+    nextScreenMode: '+'
+    prevScreenMode: '_'
+    undo: 'z'
+    redo: '<c-z>'
+    filteringMenu: '<c-s>'
+    diffingMenu: 'W'
+    diffingMenu-alt: '<c-e>'
+    copyToClipboard: '<c-o>'
+    openRecentRepos: '<c-r>'
+    submitEditorText: '<enter>'
+    extrasMenu: '@'
+    toggleWhitespaceInDiffView: '<c-w>'
+    increaseContextInDiffView: '}'
+    decreaseContextInDiffView: '{'
+  status:
+    checkForUpdate: 'u'
+    recentRepos: '<enter>'
+    allBranchesLogGraph: 'a'
+  files:
+    commitChanges: 'c'
+    commitChangesWithoutHook: 'w'
+    amendLastCommit: 'A'
+    commitChangesWithEditor: 'C'
+    findBaseCommitForFixup: '<c-f>'
+    confirmDiscard: 'x'
+    ignoreFile: 'i'
+    refreshFiles: 'r'
+    stashAllChanges: 's'
+    viewStashOptions: 'S'
+    toggleStagedAll: 'a'
+    viewResetOptions: 'D'
+    fetch: 'f'
+    toggleTreeView: '`'
+    openMergeTool: 'M'
+    openStatusFilter: '<c-b>'
+  branches:
+    createPullRequest: 'o'
+    viewPullRequestOptions: 'O'
+    copyPullRequestURL: '<c-y>'
+    checkoutBranchByName: 'c'
+    forceCheckoutBranch: 'F'
+    rebaseBranch: 'r'
+    renameBranch: 'R'
+    mergeIntoCurrentBranch: 'M'
+    viewGitFlowOptions: 'i'
+    fastForward: 'f'
+    createTag: 'T'
+    pushTag: 'P'
+    setUpstream: 'u'
+    fetchRemote: 'f'
+  worktrees:
+    viewWorktreeOptions: 'w'
+  commits:
+    squashDown: 's'
+    renameCommit: 'r'
+    renameCommitWithEditor: 'R'
+    viewResetOptions: 'g'
+    markCommitAsFixup: 'f'
+    createFixupCommit: 'F'
+    squashAboveCommits: 'S'
+    moveDownCommit: '<c-j>'
+    moveUpCommit: '<c-k>'
+    amendToCommit: 'A'
+    resetCommitAuthor: 'a'
+    pickCommit: 'p'
+    revertCommit: 't'
+    cherryPickCopy: 'C'
+    pasteCommits: 'V'
+    markCommitAsBaseForRebase: 'B'
+    tagCommit: 'T'
+    checkoutCommit: '<space>'
+    resetCherryPick: '<c-R>'
+    copyCommitMessageToClipboard: '<c-y>'
+    openLogMenu: '<c-l>'
+    viewBisectOptions: 'b'
+    startInteractiveRebase: 'i'
+  amendAttribute:
+    resetAuthor: 'a'
+    setAuthor: 'A'
+    addCoAuthor: 'c'
+  stash:
+    popStash: 'g'
+    renameStash: 'r'
+  commitFiles:
+    checkoutCommitFile: 'c'
+  main:
+    pickBothHunks: 'b'
+    pickLeftHunk: 'h'
+    pickRightHunk: 'l'
+    editSelectHunk: 'e'
+    selectPrevHunk: 'k'
+    selectNextHunk: 'j'
+    selectPrevConflict: 'K'
+    selectNextConflict: 'J'
+    toggleDragSelect: 'v'
+    toggleDragSelect-alt: 'V'
+    toggleSelectHunk: 'a'
+    confirmMerge: '<space>'
+    undo: 'z'
+  submodules:
+    init: 'i'
+    update: 'u'
+    bulkMenu: 'b'

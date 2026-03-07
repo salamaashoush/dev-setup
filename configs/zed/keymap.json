@@ -1,0 +1,98 @@
+[
+  // Zed Keybindings - VS Code compatible with enhancements
+  // Uses VSCode base keymap, these are additional/overrides
+
+  {
+    "context": "Workspace",
+    "bindings": {
+      // File operations
+      "ctrl-shift-n": "workspace::NewWindow",
+      "ctrl-shift-w": "workspace::CloseWindow",
+      "ctrl-k ctrl-s": "zed::OpenKeymap",
+      "ctrl-k ctrl-t": "theme_selector::Toggle",
+
+      // Panels
+      "ctrl-b": "workspace::ToggleLeftDock",
+      "ctrl-\\": "workspace::ToggleRightDock",
+      "ctrl-j": "workspace::ToggleBottomDock",
+      "ctrl-shift-e": "project_panel::ToggleFocus",
+      "ctrl-shift-o": "outline::Toggle",
+
+      // Terminal
+      "ctrl-`": "terminal_panel::ToggleFocus",
+      "ctrl-shift-`": "workspace::NewTerminal"
+    }
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      // Multi-cursor
+      "ctrl-d": "editor::SelectNext",
+      "ctrl-shift-l": "editor::SelectAllMatches",
+      "ctrl-u": "editor::UndoSelection",
+      "alt-click": "editor::AddSelectionAbove",
+      "ctrl-alt-up": "editor::AddSelectionAbove",
+      "ctrl-alt-down": "editor::AddSelectionBelow",
+
+      // Line operations
+      "ctrl-shift-k": "editor::DeleteLine",
+      "ctrl-shift-up": "editor::MoveLineUp",
+      "ctrl-shift-down": "editor::MoveLineDown",
+      "alt-shift-up": "editor::DuplicateLineUp",
+      "alt-shift-down": "editor::DuplicateLineDown",
+      "ctrl-enter": "editor::NewlineBelow",
+      "ctrl-shift-enter": "editor::NewlineAbove",
+
+      // Code actions
+      "ctrl-.": "editor::ToggleCodeActions",
+      "f2": "editor::Rename",
+      "f12": "editor::GoToDefinition",
+      "alt-f12": "editor::GoToDefinitionSplit",
+      "ctrl-f12": "editor::GoToImplementation",
+      "shift-f12": "editor::FindAllReferences",
+      "ctrl-shift-r": "project_symbols::Toggle",
+
+      // Comments
+      "ctrl-/": "editor::ToggleComments",
+      "ctrl-shift-a": "editor::ToggleBlockComment",
+
+      // Folding
+      "ctrl-shift-[": "editor::Fold",
+      "ctrl-shift-]": "editor::UnfoldLines",
+      "ctrl-k ctrl-0": "editor::FoldAll",
+      "ctrl-k ctrl-j": "editor::UnfoldAll"
+    }
+  },
+  {
+    "context": "Pane",
+    "bindings": {
+      // Tab navigation
+      "ctrl-tab": "pane::ActivateNextItem",
+      "ctrl-shift-tab": "pane::ActivatePrevItem",
+      "ctrl-w": "pane::CloseActiveItem",
+      "alt-left": "pane::ActivatePrevItem",
+      "alt-right": "pane::ActivateNextItem",
+
+      // Pane navigation
+      "ctrl-k up": ["workspace::ActivatePaneInDirection", "Up"],
+      "ctrl-k down": ["workspace::ActivatePaneInDirection", "Down"],
+      "ctrl-k left": ["workspace::ActivatePaneInDirection", "Left"],
+      "ctrl-k right": ["workspace::ActivatePaneInDirection", "Right"],
+
+      // Split management
+      "ctrl-k ctrl-up": "pane::SplitUp",
+      "ctrl-k ctrl-down": "pane::SplitDown",
+      "ctrl-k ctrl-left": "pane::SplitLeft",
+      "ctrl-k ctrl-right": "pane::SplitRight"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-c": "terminal::SendKeystroke",
+      "ctrl-v": "terminal::Paste",
+      "ctrl-shift-c": "terminal::Copy",
+      "ctrl-shift-v": "terminal::Paste"
+    }
+  }
+]

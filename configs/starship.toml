@@ -1,0 +1,157 @@
+# Starship configuration with Tokyo Night Storm theme
+# Colors based on https://github.com/folke/tokyonight.nvim
+
+# Timeout for commands
+command_timeout = 500
+
+# Tokyo Night Storm color palette
+[palettes.tokyonight_storm]
+bg = "#24283b"
+fg = "#c0caf5"
+cyan = "#7dcfff"
+green = "#9ece6a"
+orange = "#ff9e64"
+pink = "#f7768e"
+purple = "#bb9af7"
+red = "#f7768e"
+yellow = "#e0af68"
+blue = "#7aa2f7"
+magenta = "#bb9af7"
+
+palette = "tokyonight_storm"
+
+# Format
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$cmd_duration\
+$line_break\
+$python\
+$nodejs\
+$rust\
+$golang\
+$docker_context\
+$character"""
+
+# Character module
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[➜](bold red)"
+vicmd_symbol = "[❮](bold green)"
+
+# Directory module
+[directory]
+style = "blue bold"
+format = "[$path]($style) "
+truncation_length = 3
+truncate_to_repo = true
+
+# Git branch module
+[git_branch]
+symbol = ""
+style = "bold purple"
+format = "on [$symbol $branch]($style) "
+
+# Git status module
+[git_status]
+style = "bold red"
+format = '([\[$all_status$ahead_behind\]]($style) )'
+conflicted = "🏳"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+untracked = "?"
+stashed = "\\$"
+modified = "!"
+staged = '[++\($count\)](green)'
+renamed = "»"
+deleted = "✘"
+
+# Command duration
+[cmd_duration]
+min_time = 500
+style = "bold yellow"
+format = "took [$duration]($style) "
+
+# Python
+[python]
+symbol = " "
+style = "yellow bold"
+format = 'via [${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+
+# Node.js
+[nodejs]
+symbol = " "
+style = "green bold"
+format = 'via [$symbol($version )]($style)'
+
+# Rust
+[rust]
+symbol = " "
+style = "red bold"
+format = 'via [$symbol($version )]($style)'
+
+# Go
+[golang]
+symbol = " "
+style = "cyan bold"
+format = 'via [$symbol($version )]($style)'
+
+# Docker
+[docker_context]
+symbol = " "
+style = "blue bold"
+format = 'via [$symbol$context]($style) '
+only_with_files = true
+
+# Memory usage
+[memory_usage]
+disabled = false
+threshold = 75
+symbol = " "
+style = "bold dimmed white"
+format = "$symbol [${ram_pct}]($style) "
+
+# Battery (for laptops)
+[battery]
+full_symbol = "🔋 "
+charging_symbol = "⚡️ "
+discharging_symbol = "💀 "
+disabled = false
+
+[[battery.display]]
+threshold = 30
+style = "bold red"
+
+# Kubernetes
+[kubernetes]
+format = '[$symbol$context( \($namespace\))]($style) '
+symbol = "☸ "
+disabled = false
+
+# AWS
+[aws]
+format = '[$symbol($profile )(\($region\) )]($style)'
+symbol = "☁️  "
+disabled = false
+
+# Time
+[time]
+disabled = true
+time_format = "%R"
+style = "bold dimmed white"
+format = '🕙[\[ $time \]]($style) '
+
+# Username
+[username]
+style_user = "bold dimmed blue"
+show_always = false
+
+# Hostname
+[hostname]
+ssh_only = true
+style = "bold dimmed green"
+format = "on [$hostname]($style) "

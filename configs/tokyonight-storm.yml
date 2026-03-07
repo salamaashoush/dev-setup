@@ -1,0 +1,97 @@
+# Tokyo Night Storm theme for vivid
+# Based on the Tokyo Night Storm color palette
+
+colors:
+  black: "1d202f"
+  red: "f7768e"
+  green: "9ece6a"
+  yellow: "e0af68"
+  blue: "7aa2f7"
+  magenta: "bb9af7"
+  cyan: "7dcfff"
+  white: "a9b1d6"
+  
+  bright_black: "414868"
+  bright_red: "f7768e"
+  bright_green: "9ece6a"
+  bright_yellow: "e0af68"
+  bright_blue: "7aa2f7"
+  bright_magenta: "bb9af7"
+  bright_cyan: "7dcfff"
+  bright_white: "c0caf5"
+
+core:
+  regular_file: {}
+  directory:
+    foreground: blue
+  symlink:
+    foreground: cyan
+  broken_symlink:
+    foreground: red
+    font-style: bold
+  missing_symlink_target:
+    foreground: red
+    background: black
+  fifo:
+    foreground: yellow
+    background: black
+  socket:
+    foreground: magenta
+    font-style: bold
+  door:
+    foreground: magenta
+  block_device:
+    foreground: yellow
+    background: black
+  character_device:
+    foreground: yellow
+    background: black
+  normal_text:
+    {}
+  sticky:
+    foreground: white
+    background: blue
+  sticky_other_writable:
+    foreground: white
+    background: green
+  other_writable:
+    foreground: black
+    background: green
+  executable_file:
+    foreground: green
+    font-style: bold
+
+markup:
+  foreground: yellow
+
+programming:
+  source:
+    foreground: white
+  tooling:
+    configuration:
+      foreground: white
+    continuous-integration:
+      foreground: green
+
+media:
+  image:
+    foreground: magenta
+  video:
+    foreground: magenta
+    font-style: bold
+  audio:
+    foreground: cyan
+
+documents:
+  foreground: white
+
+archives:
+  foreground: red
+  font-style: bold
+
+executable:
+  foreground: green
+  font-style: bold
+
+unimportant:
+  foreground: bright_black

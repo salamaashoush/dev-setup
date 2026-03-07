@@ -1,0 +1,83 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" =~ \\.(js|ts|jsx|tsx|py|java|go|rs)$ ]]; then echo \"🔍 Code quality check for $CLAUDE_TOOL_FILE_PATH\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" =~ \\.py$ ]] && command -v black &> /dev/null; then echo \"🎨 Auto-formatting Python file: $CLAUDE_TOOL_FILE_PATH\"; black \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" =~ \\.(js|ts|jsx|tsx)$ ]] && command -v prettier &> /dev/null; then echo \"🎨 Auto-formatting JS/TS file: $CLAUDE_TOOL_FILE_PATH\"; prettier --write \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
+          },
+          {
+            "type": "command",
+            "command": "if git rev-parse --git-dir &> /dev/null; then echo \"📝 Staging file: $CLAUDE_TOOL_FILE_PATH\"; git add \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" =~ \\.(js|ts|py|java|go|rs)$ ]] && [[ ! \"$CLAUDE_TOOL_FILE_PATH\" =~ test|spec ]]; then echo \"🧪 Remember to run tests after modifying: $CLAUDE_TOOL_FILE_PATH\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" =~ \\.(js|ts|py)$ ]] && command -v bandit &> /dev/null && [[ \"$CLAUDE_TOOL_FILE_PATH\" =~ \\.py$ ]]; then echo \"🔐 Security scan for: $CLAUDE_TOOL_FILE_PATH\"; bandit -r \"$CLAUDE_TOOL_FILE_PATH\" -f txt 2>/dev/null || true; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" =~ (package\\.json|requirements\\.txt|Cargo\\.toml|go\\.mod)$ ]]; then echo \"📦 Dependency file updated: $CLAUDE_TOOL_FILE_PATH - Consider running dependency audit\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" =~ \\.(js|ts|py|java|go|rs)$ ]] && ! grep -q \"@param\\|@return\\|def.*:.*\\\"\\\"\\\"\\|//.*@\" \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null; then echo \"📖 Consider adding documentation to: $CLAUDE_TOOL_FILE_PATH\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ -f \"$CLAUDE_TOOL_FILE_PATH\" ]] && [[ $(wc -l < \"$CLAUDE_TOOL_FILE_PATH\") -gt 500 ]]; then echo \"⚠️ Large file detected (>500 lines): $CLAUDE_TOOL_FILE_PATH - Consider refactoring\"; fi"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_USER_PROMPT\" | grep -qi \"performance\\|optimize\\|slow\\|bottleneck\"; then echo \"🚀 Performance optimization context detected - Consider using /optimize command\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_USER_PROMPT\" | grep -qi \"architecture\\|design\\|scalability\\|system\"; then echo \"🏗️ Architecture context detected - Consider using /architect command\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_USER_PROMPT\" | grep -qi \"bug\\|error\\|issue\\|problem\\|debug\"; then echo \"🐛 Debug context detected - Consider using /debug-deep command\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_USER_PROMPT\" | grep -qi \"refactor\\|improve\\|clean\\|restructure\"; then echo \"🔧 Refactoring context detected - Consider using /refactor command\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_USER_PROMPT\" | grep -qi \"test\\|testing\\|coverage\\|unit.*test\"; then echo \"🧪 Testing context detected - Consider using /test-gen command\"; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"📊 Session complete. Files modified: $(git diff --name-only 2>/dev/null | wc -l || echo 'N/A')\""
+          }
+        ]
+      }
+    ]
+  }
+}

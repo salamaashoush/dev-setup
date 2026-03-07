@@ -1,0 +1,54 @@
+// Work Layout - Multiple tabs for different tasks
+// Usage: zellij --layout work
+
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        children
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+
+    // Tab 1: Editor
+    tab name="editor" focus=true {
+        pane split_direction="vertical" {
+            pane size="75%" {
+                name "code"
+                focus true
+            }
+            pane size="25%" {
+                name "terminal"
+            }
+        }
+    }
+
+    // Tab 2: Terminal
+    tab name="term" {
+        pane split_direction="horizontal" {
+            pane size="50%" name="main"
+            pane size="50%" name="aux"
+        }
+    }
+
+    // Tab 3: Git
+    tab name="git" {
+        pane {
+            command "lazygit"
+            name "lazygit"
+        }
+    }
+
+    // Tab 4: Logs/Monitoring
+    tab name="logs" {
+        pane split_direction="horizontal" {
+            pane size="70%" name="logs"
+            pane size="30%" {
+                command "btop"
+                name "monitor"
+            }
+        }
+    }
+}

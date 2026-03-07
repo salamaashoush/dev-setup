@@ -1,0 +1,114 @@
+{
+  "baseFontSize": 16,
+  "theme": "obsidian",
+  "cssTheme": "Tokyo Night Storm",
+  "translucency": false,
+  "nativeMenus": false,
+  "showViewHeader": true,
+  "defaultViewMode": "source",
+  "readableLineLength": false,
+  "strictLineBreaks": false,
+  "showFrontmatter": true,
+  "foldHeading": true,
+  "foldIndent": true,
+  "showLineNumber": true,
+  "showIndentGuide": true,
+  "tabSize": 2,
+  "useTab": false,
+  "autoConvertHtml": true,
+  "spellcheck": true,
+  "spellcheckLanguages": ["en-US"],
+  "vimMode": false,
+  "communityPluginSortOrder": "download",
+  "alwaysUpdateLinks": true,
+  "attachmentFolderPath": "./attachments",
+  "newFileLocation": "current",
+  "newLinkFormat": "relative",
+  "useMarkdownLinks": false,
+  "showUnsupportedFiles": false,
+  "defaultViewMode": "preview",
+  "livePreview": true,
+  "focusNewTab": true,
+  "hotkeys": {
+    "command-palette:open": [
+      {
+        "modifiers": ["Mod", "Shift"],
+        "key": "P"
+      }
+    ],
+    "quick-switcher:open": [
+      {
+        "modifiers": ["Mod"],
+        "key": "P"
+      }
+    ],
+    "graph:open": [
+      {
+        "modifiers": ["Mod", "Shift"],
+        "key": "G"
+      }
+    ],
+    "daily-notes": [
+      {
+        "modifiers": ["Mod", "Shift"],
+        "key": "D"
+      }
+    ],
+    "editor:toggle-fold": [
+      {
+        "modifiers": ["Mod"],
+        "key": "."
+      }
+    ],
+    "editor:toggle-comments": [
+      {
+        "modifiers": ["Mod"],
+        "key": "/"
+      }
+    ],
+    "editor:follow-link": [
+      {
+        "modifiers": ["Mod"],
+        "key": "Enter"
+      }
+    ]
+  },
+  "enabledPlugins": [
+    "audio-recorder",
+    "backlink",
+    "command-palette",
+    "daily-notes",
+    "editor-status",
+    "file-explorer",
+    "file-recovery",
+    "global-search",
+    "graph",
+    "markdown-importer",
+    "note-composer",
+    "open-with-default-app",
+    "outline",
+    "page-preview",
+    "properties",
+    "quick-switcher",
+    "random-note",
+    "slash-command",
+    "starred",
+    "switcher",
+    "sync",
+    "tag-pane",
+    "templates",
+    "word-count"
+  ],
+  "communityPlugins": [
+    "obsidian-git",
+    "calendar",
+    "templater-obsidian",
+    "dataview",
+    "obsidian-excalidraw-plugin",
+    "obsidian-kanban",
+    "obsidian-tasks-plugin",
+    "table-editor-obsidian",
+    "obsidian-admonition",
+    "obsidian-mind-map"
+  ]
+}

@@ -1,0 +1,27 @@
+# Bat configuration
+# https://github.com/sharkdp/bat
+
+# Theme - Tokyo Night Storm
+--theme="tokyonight_storm"
+
+# Style
+--style="numbers,changes,header,grid"
+
+# Use italic for comments
+--italic-text=always
+
+# Enable paging only if output doesn't fit
+--paging=auto
+
+# Set pager
+--pager="less -FR"
+
+# Syntax mappings
+--map-syntax "*.conf:INI"
+--map-syntax ".gitignore:Git Ignore"
+--map-syntax "*.zsh:Bourne Again Shell (bash)"
+--map-syntax ".zshrc:Bourne Again Shell (bash)"
+--map-syntax ".bashrc:Bourne Again Shell (bash)"
+--map-syntax "*.env:INI"
+--map-syntax ".env*:INI"
+--map-syntax "Dockerfile*:Dockerfile"

@@ -1,0 +1,34 @@
+{
+  "builder": {
+    "gc": {
+      "enabled": true,
+      "defaultKeepStorage": "20GB"
+    }
+  },
+  "default-address-pools": [
+    {
+      "base": "172.17.0.0/16",
+      "size": 24
+    },
+    {
+      "base": "172.18.0.0/16",
+      "size": 24
+    }
+  ],
+  "storage-driver": "overlay2",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "live-restore": true,
+  "max-concurrent-downloads": 10,
+  "max-concurrent-uploads": 5,
+  "default-ulimits": {
+    "nofile": {
+      "Name": "nofile",
+      "Hard": 64000,
+      "Soft": 64000
+    }
+  }
+}

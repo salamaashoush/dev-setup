@@ -1,0 +1,292 @@
+# ===========================================
+# Zinit Plugin Manager
+# ===========================================
+
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+
+if [[ ! -f "$ZINIT_HOME/zinit.zsh" ]]; then
+    print -P "%F{33}Installing Zinit...%f"
+    command mkdir -p "$(dirname $ZINIT_HOME)"
+    command git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME" && \
+        print -P "%F{34}Zinit installed successfully.%f" || \
+        print -P "%F{160}Zinit installation failed.%f"
+fi
+
+source "$ZINIT_HOME/zinit.zsh"
+autoload -Uz _zinit
+(( ${+_comps} )) && _comps[zinit]=_zinit
+
+# ===========================================
+# Environment Variables
+# ===========================================
+
+# Editors
+export EDITOR="nvim"
+export VISUAL="$EDITOR"
+export SUDO_EDITOR="$EDITOR"
+
+# Pager
+export PAGER="less"
+export LESS="-R --mouse"
+
+# Language
+export LANG="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
+
+# Development paths
+export BUN_INSTALL="$HOME/.bun"
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export CARGO_HOME="$HOME/.cargo"
+export RUSTUP_HOME="$HOME/.rustup"
+
+# Android SDK (optional)
+export ANDROID_HOME="$HOME/Android/Sdk"
+export NDK_HOME="$ANDROID_HOME/ndk"
+
+# XDG directories
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+
+# ===========================================
+# PATH Configuration
+# ===========================================
+
+typeset -U path PATH  # Automatically removes duplicates
+
+path=(
+    # Mise managed tools (highest priority)
+    "$HOME/.local/share/mise/shims"
+
+    # User binaries
+    "$HOME/.local/bin"
+    "$CARGO_HOME/bin"
+    "$BUN_INSTALL/bin"
+    "$PNPM_HOME"
+
+    # Development tools
+    "$ANDROID_HOME/platform-tools"
+    "$ANDROID_HOME/emulator"
+
+    # Keep existing PATH
+    $path
+)
+
+# Platform-specific PATH
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    path=(
+        "/opt/homebrew/bin"
+        "/opt/homebrew/sbin"
+        $path
+    )
+fi
+
+export PATH
+
+# ===========================================
+# Zinit Plugins
+# ===========================================
+
+# Load annexes
+zinit light-mode for \
+    zdharma-continuum/zinit-annex-bin-gem-node \
+    zdharma-continuum/zinit-annex-patch-dl
+
+# Essential plugins with turbo mode
+zinit wait lucid light-mode for \
+    atinit"zicompinit; zicdreplay" \
+        zdharma-continuum/fast-syntax-highlighting \
+    atload"_zsh_autosuggest_start" \
+        zsh-users/zsh-autosuggestions \
+    blockf atpull'zinit creinstall -q .' \
+        zsh-users/zsh-completions
+
+# OMZ snippets
+zinit snippet OMZL::git.zsh
+zinit snippet OMZP::git
+zinit snippet OMZP::sudo
+zinit snippet OMZP::command-not-found
+
+# Conditional plugins
+command -v docker &>/dev/null && zinit snippet OMZP::docker
+command -v kubectl &>/dev/null && zinit snippet OMZP::kubectl
+
+# ===========================================
+# History Configuration
+# ===========================================
+
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+
+setopt EXTENDED_HISTORY          # Write timestamp
+setopt HIST_EXPIRE_DUPS_FIRST    # Expire duplicates first
+setopt HIST_IGNORE_DUPS          # Don't record duplicates
+setopt HIST_IGNORE_ALL_DUPS      # Delete old recorded duplicates
+setopt HIST_FIND_NO_DUPS         # Don't display duplicates
+setopt HIST_IGNORE_SPACE         # Don't record lines starting with space
+setopt HIST_SAVE_NO_DUPS         # Don't write duplicates
+setopt SHARE_HISTORY             # Share history between sessions
+setopt HIST_REDUCE_BLANKS        # Remove superfluous blanks
+setopt INC_APPEND_HISTORY        # Add commands immediately
+
+# ===========================================
+# Shell Options
+# ===========================================
+
+setopt AUTO_CD                   # cd by typing directory name
+setopt AUTO_PUSHD                # Push directories to stack
+setopt PUSHD_IGNORE_DUPS         # Don't push duplicates
+setopt PUSHD_SILENT              # Don't print directory stack
+setopt CORRECT                   # Command correction
+setopt INTERACTIVE_COMMENTS      # Allow comments in interactive shell
+setopt NO_BEEP                   # No beep on error
+
+# ===========================================
+# Keybindings
+# ===========================================
+
+bindkey -e  # Emacs keybindings
+
+bindkey '^[[A' history-search-backward    # Up arrow
+bindkey '^[[B' history-search-forward     # Down arrow
+bindkey '^[[H' beginning-of-line          # Home
+bindkey '^[[F' end-of-line                # End
+bindkey '^[[3~' delete-char               # Delete
+bindkey '^[[1;5C' forward-word            # Ctrl+Right
+bindkey '^[[1;5D' backward-word           # Ctrl+Left
+bindkey '^H' backward-kill-word           # Ctrl+Backspace
+
+# ===========================================
+# Completion System
+# ===========================================
+
+autoload -Uz compinit
+
+# Speed up compinit by checking cache once a day
+local zcompdump="${ZDOTDIR:-$HOME}/.zcompdump"
+if [[ -n ${zcompdump}(#qN.mh+24) ]]; then
+    compinit
+else
+    compinit -C
+fi
+
+# Compile zcompdump in background
+{
+    if [[ -s "$zcompdump" && (! -s "${zcompdump}.zwc" || "$zcompdump" -nt "${zcompdump}.zwc") ]]; then
+        zcompile "$zcompdump"
+    fi
+} &!
+
+# Completion styling
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # Case insensitive
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
+
+# ===========================================
+# Load Aliases and Functions
+# ===========================================
+
+[[ -f "$HOME/.config/shell/aliases.sh" ]] && source "$HOME/.config/shell/aliases.sh"
+
+# ===========================================
+# Tool Initialization
+# ===========================================
+
+# Starship prompt
+command -v starship &>/dev/null && eval "$(starship init zsh)"
+
+# Zoxide (smart cd) - use 'z' command, don't override 'cd'
+# This ensures scripts using 'cd' work normally
+if command -v zoxide &>/dev/null; then
+    eval "$(zoxide init zsh)"
+    # z  = jump to directory (learns your habits)
+    # zi = interactive selection with fzf
+fi
+
+# Direnv
+command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
+
+# FZF - fuzzy finder with integrations
+if command -v fzf &>/dev/null; then
+    source <(fzf --zsh 2>/dev/null) || eval "$(fzf --zsh)"
+
+    # FZF theme (Tokyo Night Storm)
+    export FZF_DEFAULT_OPTS="
+        --height 50%
+        --layout=reverse
+        --border=rounded
+        --info=inline
+        --marker='▶'
+        --pointer='▶'
+        --prompt='❯ '
+        --color=bg+:#293739,bg:#1d2021,spinner:#9ece6a,hl:#7aa2f7
+        --color=fg:#c0caf5,header:#7aa2f7,info:#e0af68,pointer:#9ece6a
+        --color=marker:#9ece6a,fg+:#c0caf5,prompt:#7aa2f7,hl+:#7aa2f7
+        --color=border:#565f89
+        --bind=ctrl-d:half-page-down,ctrl-u:half-page-up
+        --bind=ctrl-y:preview-up,ctrl-e:preview-down
+    "
+
+    # Use fd for FZF if available (faster than find)
+    if command -v fd &>/dev/null; then
+        export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
+        export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+        export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
+    fi
+
+    # Ctrl+T preview with bat (syntax highlighted)
+    if command -v bat &>/dev/null; then
+        export FZF_CTRL_T_OPTS="
+            --preview 'bat --style=numbers --color=always --line-range :500 {} 2>/dev/null || cat {}'
+            --preview-window=right:60%:wrap
+            --bind='ctrl-/:toggle-preview'
+        "
+    fi
+
+    # Alt+C preview with eza (directory tree)
+    if command -v eza &>/dev/null; then
+        export FZF_ALT_C_OPTS="
+            --preview 'eza --tree --level=2 --color=always --icons {} 2>/dev/null'
+            --preview-window=right:50%
+        "
+    fi
+
+    # Ctrl+R history search with preview
+    export FZF_CTRL_R_OPTS="
+        --preview 'echo {}'
+        --preview-window=down:3:wrap
+        --bind='ctrl-y:execute-silent(echo -n {2..} | ${WAYLAND_DISPLAY:+wl-copy}${WAYLAND_DISPLAY:-xclip -selection clipboard})+abort'
+    "
+fi
+
+# Mise version manager
+if [[ -f "$HOME/.local/bin/mise" ]]; then
+    eval "$("$HOME/.local/bin/mise" activate zsh)"
+elif command -v mise &>/dev/null; then
+    eval "$(mise activate zsh)"
+fi
+
+# Vivid LS_COLORS
+if command -v vivid &>/dev/null; then
+    export LS_COLORS="$(vivid generate tokyonight-storm 2>/dev/null || vivid generate molokai)"
+fi
+
+# GitHub Copilot CLI (only if authenticated)
+if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
+    eval "$(gh copilot alias -- zsh 2>/dev/null)" || true
+fi
+
+# Bun completions
+[[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
+
+# ===========================================
+# Finalize
+# ===========================================
+
+zinit cdreplay -q
+
+# Load local overrides
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
