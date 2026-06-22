@@ -138,7 +138,7 @@
     fixup = "!f() { git commit --fixup=$1; }; f"
     wip = !git add -A && git commit -m "WIP [skip ci]"
     unwip = !git log -n 1 | grep -q -c "WIP" && git reset HEAD~1
-    save = !git add -A && git commit -m "SAVEPOINT"
+    savepoint = !git add -A && git commit -m "SAVEPOINT"
     
     # Undo commands
     undo = reset HEAD~1 --mixed

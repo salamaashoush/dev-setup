@@ -20,10 +20,12 @@ command = "pylsp"
 config.pylsp.plugins.pycodestyle.enabled = false
 config.pylsp.plugins.flake8.enabled = false
 config.pylsp.plugins.pylint.enabled = false
-config.pylsp.plugins.ruff.enabled = true
+# Linting handled by the dedicated `ruff` language server below, not pylsp.
+config.pylsp.plugins.ruff.enabled = false
 
 [language-server.ruff]
-command = "ruff-lsp"
+command = "ruff"
+args = ["server"]
 
 # Rust
 [language-server.rust-analyzer]

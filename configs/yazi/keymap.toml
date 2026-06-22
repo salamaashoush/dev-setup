@@ -1,7 +1,7 @@
 # Yazi Keymap Configuration
 # Based on vim-like keybindings with modern enhancements
 
-[manager]
+[mgr]
 keymap = [
 	# Navigation
 	{ on = [ "h" ], run = "leave", desc = "Go back to parent directory" },

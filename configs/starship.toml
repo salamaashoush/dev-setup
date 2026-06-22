@@ -34,6 +34,10 @@ $nodejs\
 $rust\
 $golang\
 $docker_context\
+$kubernetes\
+$aws\
+$memory_usage\
+$battery\
 $character"""
 
 # Character module

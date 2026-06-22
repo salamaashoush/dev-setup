@@ -368,8 +368,9 @@
   // Note: Rust, TypeScript, Python, Go, C/C++ are built-in
   // ===========================================
   "auto_install_extensions": {
-    // Theme
+    // Theme + icons (icon_theme above is "Catppuccin Macchiato")
     "tokyo-night": true,
+    "catppuccin-icons": true,
 
     // Config files
     "toml": true,

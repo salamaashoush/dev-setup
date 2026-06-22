@@ -765,7 +765,10 @@ install_tokyo_night_themes() {
     fi
 
     if command_exists yazi && [[ -d "$HOME/.config/yazi" ]]; then
-        curl -fsSL "$theme_base/yazi/tokyonight_storm.toml" -o "$HOME/.config/yazi/theme.toml" 2>/dev/null || true
+        # Do NOT overwrite theme.toml here -- this repo ships its own fixed
+        # configs/yazi/theme.toml (current [mgr]/[icon] schema). Only fetch the
+        # syntect highlighting theme it references via syntect_theme.
+        curl -fsSL "$theme_base/sublime/tokyonight_storm.tmTheme" -o "$HOME/.config/yazi/tokyonight_storm.tmTheme" 2>/dev/null || true
     fi
 
 

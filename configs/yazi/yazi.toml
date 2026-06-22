@@ -1,7 +1,7 @@
 # Yazi Configuration
 # https://yazi-rs.github.io/
 
-[manager]
+[mgr]
 # Sort files naturally
 sort_by = "natural"
 sort_sensitive = false
@@ -51,27 +51,27 @@ play = [
 ]
 
 [open]
-rules = [
+prepend_rules = [
 	# Text files
-	{ name = "*.txt", use = ["edit", "open"] },
-	{ name = "*.md", use = ["edit", "open"] },
-	
+	{ url = "*.txt", use = ["edit", "open"] },
+	{ url = "*.md", use = ["edit", "open"] },
+
 	# Code files
-	{ name = "*.{js,jsx,ts,tsx,json,toml,yaml,yml}", use = ["edit", "open"] },
-	{ name = "*.{py,rb,go,rs,c,cpp,h,hpp}", use = ["edit", "open"] },
-	{ name = "*.{sh,bash,zsh,fish}", use = ["edit", "open"] },
-	
+	{ url = "*.{js,jsx,ts,tsx,json,toml,yaml,yml}", use = ["edit", "open"] },
+	{ url = "*.{py,rb,go,rs,c,cpp,h,hpp}", use = ["edit", "open"] },
+	{ url = "*.{sh,bash,zsh,fish}", use = ["edit", "open"] },
+
 	# Archives
-	{ name = "*.{zip,gz,tar,bz2,7z,rar}", use = ["extract", "open"] },
-	
+	{ url = "*.{zip,gz,tar,bz2,7z,rar}", use = ["extract", "open"] },
+
 	# Media
-	{ name = "*.{jpg,jpeg,png,gif,webp,svg,ico}", use = ["open"] },
-	{ name = "*.{mp4,mkv,avi,mov,webm}", use = ["play", "open"] },
-	{ name = "*.{mp3,wav,flac,ogg}", use = ["play", "open"] },
-	
+	{ url = "*.{jpg,jpeg,png,gif,webp,svg,ico}", use = ["open"] },
+	{ url = "*.{mp4,mkv,avi,mov,webm}", use = ["play", "open"] },
+	{ url = "*.{mp3,wav,flac,ogg}", use = ["play", "open"] },
+
 	# Documents
-	{ name = "*.{pdf,doc,docx,xls,xlsx,ppt,pptx}", use = ["open"] },
-	
+	{ url = "*.{pdf,doc,docx,xls,xlsx,ppt,pptx}", use = ["open"] },
+
 	# Directories
 	{ mime = "inode/directory", use = ["open", "edit"] },
 ]
