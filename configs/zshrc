@@ -1,4 +1,23 @@
 # ===========================================
+# zsh system functions on fpath (must run first)
+# ===========================================
+# Brew/distro zsh bakes the version-pinned functions dir into the default
+# fpath, so a `brew upgrade zsh` (or distro update) leaves a running shell
+# unable to autoload is-at-least, colors, add-zsh-hook or compinit -- which
+# breaks zinit and every plugin. Prepend the stable, non-pinned dirs.
+() {
+  local d
+  for d in \
+    /opt/homebrew/share/zsh/functions \
+    /usr/local/share/zsh/functions \
+    "/usr/share/zsh/${ZSH_VERSION}/functions" \
+    /usr/share/zsh/functions; do
+    [[ -d $d ]] && fpath=("$d" $fpath)
+  done
+}
+typeset -U fpath
+
+# ===========================================
 # Zinit Plugin Manager
 # ===========================================
 
@@ -92,7 +111,9 @@ zinit light-mode for \
     zdharma-continuum/zinit-annex-bin-gem-node \
     zdharma-continuum/zinit-annex-patch-dl
 
-# Essential plugins with turbo mode
+# Essential plugins with turbo mode. `zicompinit; zicdreplay` is the single
+# source of compinit + compdef replay for the whole config (runs after the
+# first prompt). Do not call compinit / cdreplay again elsewhere.
 zinit wait lucid light-mode for \
     atinit"zicompinit; zicdreplay" \
         zdharma-continuum/fast-syntax-highlighting \
@@ -128,6 +149,7 @@ setopt HIST_IGNORE_SPACE         # Don't record lines starting with space
 setopt HIST_SAVE_NO_DUPS         # Don't write duplicates
 setopt SHARE_HISTORY             # Share history between sessions
 setopt HIST_REDUCE_BLANKS        # Remove superfluous blanks
+setopt HIST_VERIFY               # Edit recalled history line before running
 setopt INC_APPEND_HISTORY        # Add commands immediately
 
 # ===========================================
@@ -141,6 +163,7 @@ setopt PUSHD_SILENT              # Don't print directory stack
 setopt CORRECT                   # Command correction
 setopt INTERACTIVE_COMMENTS      # Allow comments in interactive shell
 setopt NO_BEEP                   # No beep on error
+setopt NO_FLOW_CONTROL           # Free up ctrl-s / ctrl-q
 
 # ===========================================
 # Keybindings
@@ -160,30 +183,23 @@ bindkey '^H' backward-kill-word           # Ctrl+Backspace
 # ===========================================
 # Completion System
 # ===========================================
+# compinit itself runs once via `zicompinit` in the turbo block above (after
+# the first prompt). Only completion styling lives here -- zstyles are plain
+# settings read by the completion system whenever it loads, so order is fine.
 
-autoload -Uz compinit
-
-# Speed up compinit by checking cache once a day
-local zcompdump="${ZDOTDIR:-$HOME}/.zcompdump"
-if [[ -n ${zcompdump}(#qN.mh+24) ]]; then
-    compinit
-else
-    compinit -C
-fi
-
-# Compile zcompdump in background
-{
-    if [[ -s "$zcompdump" && (! -s "${zcompdump}.zwc" || "$zcompdump" -nt "${zcompdump}.zwc") ]]; then
-        zcompile "$zcompdump"
-    fi
-} &!
-
-# Completion styling
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # Case insensitive
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' group-name ''
 zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
+
+# Compile the dump in the background after it exists, so future starts are fast.
+{
+    local _zcd="${ZDOTDIR:-$HOME}/.zcompdump"
+    if [[ -s "$_zcd" && (! -s "${_zcd}.zwc" || "$_zcd" -nt "${_zcd}.zwc") ]]; then
+        zcompile "$_zcd"
+    fi
+} &!
 
 # ===========================================
 # Load Aliases and Functions
@@ -192,91 +208,188 @@ zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
 [[ -f "$HOME/.config/shell/aliases.sh" ]] && source "$HOME/.config/shell/aliases.sh"
 
 # ===========================================
-# Tool Initialization
+# Shell Functions
 # ===========================================
 
-# Starship prompt
-command -v starship &>/dev/null && eval "$(starship init zsh)"
+# Reload the shell cleanly. Re-sourcing .zshrc is unsafe: zinit, the eval-based
+# tool hooks (starship/zoxide/direnv/mise/fzf) and OMZ's deferred precmd hooks
+# all assume one-shot init and stack state on re-source. A fresh exec is clean
+# and, thanks to the fpath guard at the top, instant and error-free.
+reload() {
+    exec zsh
+}
 
-# Zoxide (smart cd) - use 'z' command, don't override 'cd'
-# This ensures scripts using 'cd' work normally
-if command -v zoxide &>/dev/null; then
-    eval "$(zoxide init zsh)"
-    # z  = jump to directory (learns your habits)
-    # zi = interactive selection with fzf
-fi
+# Delete local branches already merged into main/master/develop.
+gprune() {
+    git branch --merged | grep -v "\*\|main\|master\|develop" | xargs -n 1 git branch -d
+}
 
-# Direnv
-command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
+# mkdir + cd into it.
+mkcd() {
+    mkdir -p -- "$1" && cd -- "$1"
+}
 
-# FZF - fuzzy finder with integrations
+# Timestamped backup copy: backup foo.conf -> foo.conf.2026-01-31_141530.bak
+backup() {
+    local ts; ts=$(date +%Y-%m-%d_%H%M%S)
+    cp -a -- "$1" "$1.${ts}.bak" && print "backup: $1.${ts}.bak"
+}
+
+# Extract any common archive by extension.
+extract() {
+    [[ -f $1 ]] || { print -u2 "extract: '$1' is not a file"; return 1 }
+    case $1 in
+        *.tar.bz2|*.tbz2) tar xjf -- "$1" ;;
+        *.tar.gz|*.tgz)   tar xzf -- "$1" ;;
+        *.tar.xz|*.txz)   tar xJf -- "$1" ;;
+        *.tar.zst)        tar --zstd -xf -- "$1" ;;
+        *.tar)            tar xf -- "$1" ;;
+        *.bz2)            bunzip2 -- "$1" ;;
+        *.gz)             gunzip -- "$1" ;;
+        *.xz)             unxz -- "$1" ;;
+        *.zst)            unzstd -- "$1" ;;
+        *.zip)            unzip -- "$1" ;;
+        *.rar)            unrar x -- "$1" ;;
+        *.7z)             7z x -- "$1" ;;
+        *) print -u2 "extract: don't know how to extract '$1'"; return 1 ;;
+    esac
+}
+
+# fzf-powered widgets (only when fzf is present)
 if command -v fzf &>/dev/null; then
-    source <(fzf --zsh 2>/dev/null) || eval "$(fzf --zsh)"
+    # Checkout a git branch (local or remote) via fuzzy picker.
+    fco() {
+        local branch
+        branch=$(git branch --all --color=never | grep -v HEAD \
+            | sed 's/^[* ] //;s#^remotes/[^/]*/##' | sort -u \
+            | fzf --height 40% --reverse) || return
+        git checkout "${branch## }"
+    }
 
-    # FZF theme (Tokyo Night Storm)
-    export FZF_DEFAULT_OPTS="
-        --height 50%
-        --layout=reverse
-        --border=rounded
-        --info=inline
-        --marker='▶'
-        --pointer='▶'
-        --prompt='❯ '
-        --color=bg+:#293739,bg:#1d2021,spinner:#9ece6a,hl:#7aa2f7
-        --color=fg:#c0caf5,header:#7aa2f7,info:#e0af68,pointer:#9ece6a
-        --color=marker:#9ece6a,fg+:#c0caf5,prompt:#7aa2f7,hl+:#7aa2f7
-        --color=border:#565f89
-        --bind=ctrl-d:half-page-down,ctrl-u:half-page-up
-        --bind=ctrl-y:preview-up,ctrl-e:preview-down
-    "
+    # ripgrep -> fzf -> open match in $EDITOR at the right line.
+    frg() {
+        local file line
+        IFS=: read -r file line _ <<<"$(
+            rg --line-number --no-heading --color=always --smart-case "${*:-}" \
+                | fzf --ansi --delimiter : \
+                      --preview 'bat --color=always --highlight-line {2} {1}' \
+                      --preview-window '+{2}/2'
+        )" || return
+        [[ -n $file ]] && "${EDITOR:-nvim}" "+${line}" "$file"
+    }
 
-    # Use fd for FZF if available (faster than find)
-    if command -v fd &>/dev/null; then
-        export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
-        export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-        export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
+    # Pick process(es) and kill them.
+    fkill() {
+        local pid
+        pid=$(ps -ef | sed 1d | fzf --multi --header='[kill:process]' | awk '{print $2}') || return
+        [[ -n $pid ]] && print "$pid" | xargs kill "-${1:-15}"
+    }
+
+    # cd into a directory chosen by fzf (fd-backed).
+    fcd() {
+        local dir
+        dir=$(fd --type d --hidden --follow --exclude .git 2>/dev/null \
+            | fzf --preview 'eza --tree --level=2 --color=always --icons {}') || return
+        [[ -n $dir ]] && cd -- "$dir"
+    }
+fi
+
+# lazygit on ctrl-g (opens, restores prompt cleanly on exit)
+if command -v lazygit &>/dev/null; then
+    _lazygit_widget() { lazygit; zle reset-prompt }
+    zle -N _lazygit_widget
+    bindkey '^g' _lazygit_widget
+fi
+
+# ===========================================
+# Tool Initialization
+# ===========================================
+# These register precmd/preexec/zle hooks via eval; re-running them in the same
+# process stacks duplicate hooks. Gate behind a one-shot sentinel so a manual
+# `source ~/.zshrc` stays harmless (use `reload` for a real clean restart).
+if [[ -z $_TOOL_HOOKS_INIT ]]; then
+    # Starship prompt
+    command -v starship &>/dev/null && eval "$(starship init zsh)"
+
+    # Zoxide (smart cd) - use 'z' to jump, 'zi' for interactive; 'cd' untouched
+    command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
+
+    # Direnv
+    command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
+
+    # Mise version manager
+    if [[ -f "$HOME/.local/bin/mise" ]]; then
+        eval "$("$HOME/.local/bin/mise" activate zsh)"
+    elif command -v mise &>/dev/null; then
+        eval "$(mise activate zsh)"
     fi
 
-    # Ctrl+T preview with bat (syntax highlighted)
-    if command -v bat &>/dev/null; then
-        export FZF_CTRL_T_OPTS="
-            --preview 'bat --style=numbers --color=always --line-range :500 {} 2>/dev/null || cat {}'
-            --preview-window=right:60%:wrap
-            --bind='ctrl-/:toggle-preview'
+    # FZF - fuzzy finder with integrations
+    if command -v fzf &>/dev/null; then
+        source <(fzf --zsh 2>/dev/null) || eval "$(fzf --zsh)"
+
+        # FZF theme (Tokyo Night Storm)
+        export FZF_DEFAULT_OPTS="
+            --height 50%
+            --layout=reverse
+            --border=rounded
+            --info=inline
+            --marker='▶'
+            --pointer='▶'
+            --prompt='❯ '
+            --color=bg+:#293739,bg:#1d2021,spinner:#9ece6a,hl:#7aa2f7
+            --color=fg:#c0caf5,header:#7aa2f7,info:#e0af68,pointer:#9ece6a
+            --color=marker:#9ece6a,fg+:#c0caf5,prompt:#7aa2f7,hl+:#7aa2f7
+            --color=border:#565f89
+            --bind=ctrl-d:half-page-down,ctrl-u:half-page-up
+            --bind=ctrl-y:preview-up,ctrl-e:preview-down
+        "
+
+        # Use fd for FZF if available (faster than find)
+        if command -v fd &>/dev/null; then
+            export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
+            export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+            export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
+        fi
+
+        # Ctrl+T preview with bat (syntax highlighted)
+        if command -v bat &>/dev/null; then
+            export FZF_CTRL_T_OPTS="
+                --preview 'bat --style=numbers --color=always --line-range :500 {} 2>/dev/null || cat {}'
+                --preview-window=right:60%:wrap
+                --bind='ctrl-/:toggle-preview'
+            "
+        fi
+
+        # Alt+C preview with eza (directory tree)
+        if command -v eza &>/dev/null; then
+            export FZF_ALT_C_OPTS="
+                --preview 'eza --tree --level=2 --color=always --icons {} 2>/dev/null'
+                --preview-window=right:50%
+            "
+        fi
+
+        # Ctrl+R history search with preview
+        export FZF_CTRL_R_OPTS="
+            --preview 'echo {}'
+            --preview-window=down:3:wrap
+            --bind='ctrl-y:execute-silent(echo -n {2..} | ${WAYLAND_DISPLAY:+wl-copy}${WAYLAND_DISPLAY:-xclip -selection clipboard})+abort'
         "
     fi
 
-    # Alt+C preview with eza (directory tree)
-    if command -v eza &>/dev/null; then
-        export FZF_ALT_C_OPTS="
-            --preview 'eza --tree --level=2 --color=always --icons {} 2>/dev/null'
-            --preview-window=right:50%
-        "
+    # Vivid LS_COLORS
+    if command -v vivid &>/dev/null; then
+        if LS_COLORS="$(vivid generate tokyonight-storm 2>/dev/null || vivid generate molokai 2>/dev/null)"; then
+            export LS_COLORS
+        fi
     fi
 
-    # Ctrl+R history search with preview
-    export FZF_CTRL_R_OPTS="
-        --preview 'echo {}'
-        --preview-window=down:3:wrap
-        --bind='ctrl-y:execute-silent(echo -n {2..} | ${WAYLAND_DISPLAY:+wl-copy}${WAYLAND_DISPLAY:-xclip -selection clipboard})+abort'
-    "
-fi
+    # GitHub Copilot CLI (only if authenticated)
+    if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
+        eval "$(gh copilot alias -- zsh 2>/dev/null)" || true
+    fi
 
-# Mise version manager
-if [[ -f "$HOME/.local/bin/mise" ]]; then
-    eval "$("$HOME/.local/bin/mise" activate zsh)"
-elif command -v mise &>/dev/null; then
-    eval "$(mise activate zsh)"
-fi
-
-# Vivid LS_COLORS
-if command -v vivid &>/dev/null; then
-    export LS_COLORS="$(vivid generate tokyonight-storm 2>/dev/null || vivid generate molokai)"
-fi
-
-# GitHub Copilot CLI (only if authenticated)
-if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
-    eval "$(gh copilot alias -- zsh 2>/dev/null)" || true
+    typeset -g _TOOL_HOOKS_INIT=1
 fi
 
 # Bun completions
@@ -286,7 +399,10 @@ fi
 # Finalize
 # ===========================================
 
-zinit cdreplay -q
+# OMZL::git appends _defer_async_git_register straight into precmd_functions
+# without dedup, so a manual re-source would stack it. Keep the hook arrays
+# unique. (compdef replay is handled by `zicdreplay` in the turbo block above.)
+typeset -U precmd_functions preexec_functions chpwd_functions
 
-# Load local overrides
+# Load local, machine-specific overrides (kept out of version control)
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"

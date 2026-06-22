@@ -930,7 +930,13 @@ EOF
         if is_macos; then
             chsh -s /bin/zsh || true
         else
-            chsh -s $(which zsh) || true
+            local zsh_path
+            zsh_path=$(command -v zsh)
+            # chsh refuses shells absent from /etc/shells; register first.
+            if [[ -n "$zsh_path" ]] && ! grep -qxF "$zsh_path" /etc/shells 2>/dev/null; then
+                echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null || true
+            fi
+            chsh -s "$zsh_path" || true
         fi
     fi
 
