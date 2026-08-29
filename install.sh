@@ -134,7 +134,39 @@ is_endeavouros() {
 }
 
 is_cachyos() {
-    is_arch_linux && [[ -f /etc/cachyos-release ]] || (is_arch_linux && pacman -Q cachyos-settings &>/dev/null 2>&1)
+    is_arch_linux || return 1
+    # /etc/cachyos-release is absent on current releases; ID= in os-release is authoritative
+    [[ -f /etc/cachyos-release ]] && return 0
+    grep -q '^ID=cachyos' /etc/os-release 2>/dev/null && return 0
+    pacman -Q cachyos-settings &>/dev/null
+}
+
+has_nvidia_gpu() {
+    is_linux && lspci -nn 2>/dev/null | grep -qiE 'vga|3d controller' && \
+        lspci -nn 2>/dev/null | grep -iE 'vga|3d controller' | grep -qi nvidia
+}
+
+has_amd_gpu() {
+    is_linux && lspci -nn 2>/dev/null | grep -iE 'vga|3d controller' | grep -qiE 'amd/ati|advanced micro devices'
+}
+
+has_intel_gpu() {
+    is_linux && lspci -nn 2>/dev/null | grep -iE 'vga|3d controller' | grep -qi intel
+}
+
+# Blackwell (RTX 50 / GB2xx) has no proprietary kernel module — open modules are mandatory.
+nvidia_requires_open_modules() {
+    has_nvidia_gpu || return 1
+    lspci -nn 2>/dev/null | grep -iE 'vga|3d controller' | grep -qiE 'GB2[0-9]{2}|RTX 50'
+}
+
+# Ryzen X3D parts with the asymmetric-CCD driver expose a cache/frequency mode switch
+has_amd_x3d_switch() {
+    compgen -G '/sys/bus/platform/drivers/amd_x3d_vcache/*/amd_x3d_mode' > /dev/null 2>&1
+}
+
+has_sched_ext() {
+    [[ -d /sys/kernel/sched_ext ]]
 }
 
 is_kde_plasma() {
@@ -440,13 +472,31 @@ EOF
     aur_install pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber gst-plugin-pipewire lib32-pipewire lib32-pipewire-jack || true
     systemctl --user enable pipewire.service pipewire-pulse.service wireplumber.service || true
 
-    # GPU-specific optimizations
-    if lspci | grep -i nvidia > /dev/null; then
+    # GPU drivers. These are independent checks, not a chain — hybrid systems
+    # (discrete NVIDIA + AMD/Intel iGPU) need drivers for BOTH.
+    if has_nvidia_gpu; then
         print_info "NVIDIA GPU detected"
-        # Install NVIDIA drivers — CachyOS has its own nvidia packages
+
+        if nvidia_requires_open_modules; then
+            print_info "Blackwell-class GPU (RTX 50 / GB2xx) — open kernel modules are mandatory"
+            if pacman -Qq nvidia-dkms &>/dev/null || pacman -Qq nvidia &>/dev/null; then
+                print_warning "Proprietary nvidia modules are installed but do not support this GPU."
+                print_warning "Replace with nvidia-open-dkms (or a *-nvidia-open kernel package)."
+            fi
+        fi
+
+        # Install NVIDIA drivers — CachyOS ships modules with its kernel packages
         if is_cachyos; then
-            print_info "CachyOS detected — using CachyOS NVIDIA packages"
+            if pacman -Qq 2>/dev/null | grep -q 'nvidia-open'; then
+                print_info "CachyOS kernel already provides the open NVIDIA modules"
+            elif nvidia_requires_open_modules; then
+                print_info "Installing open NVIDIA modules for CachyOS"
+                sudo pacman -S --needed --noconfirm nvidia-open-dkms 2>/dev/null || \
+                    print_warning "Install a linux-cachyos-*-nvidia-open kernel instead"
+            fi
             sudo pacman -S --needed --noconfirm nvidia-utils lib32-nvidia-utils nvidia-settings 2>/dev/null || true
+        elif nvidia_requires_open_modules; then
+            aur_install nvidia-open-dkms nvidia-utils lib32-nvidia-utils nvidia-settings || true
         elif command_exists nvidia-inst; then
             # EndeavourOS nvidia installer
             sudo nvidia-inst --32 -f || true
@@ -480,10 +530,14 @@ PROTON_ENABLE_NVAPI=1
 EOF
 
         print_success "NVIDIA gaming env vars configured"
-    elif lspci | grep -i amd > /dev/null; then
-        print_info "AMD GPU detected"
+    fi
+
+    if has_amd_gpu; then
+        print_info "AMD GPU detected (discrete or integrated)"
         aur_install mesa vulkan-radeon lib32-mesa lib32-vulkan-radeon || true
-    elif lspci | grep -i intel > /dev/null; then
+    fi
+
+    if has_intel_gpu; then
         print_info "Intel GPU detected"
         aur_install mesa vulkan-intel lib32-mesa lib32-vulkan-intel || true
     fi
@@ -1558,6 +1612,61 @@ verify_docker() {
 # Development Tools Setup
 # ==========================================
 
+# cargo-binstall pulls prebuilt binaries instead of compiling each tool from source
+setup_rust_tooling() {
+    command_exists cargo || { print_warning "cargo not found — skipping Rust tooling"; return 0; }
+
+    local tools=(
+        cargo-watch cargo-edit cargo-outdated cargo-audit cargo-expand
+        cargo-nextest bacon
+    )
+
+    if command_exists cargo-binstall; then
+        print_step "Installing Rust tools via cargo-binstall..."
+        cargo binstall --no-confirm --disable-telemetry "${tools[@]}" 2>/dev/null || \
+            cargo install "${tools[@]}" || true
+    else
+        cargo install "${tools[@]}" || true
+    fi
+
+    # wasm32 target for web/WASM work (Leptos, Yew, wasm-pack, Bevy web builds)
+    if command_exists rustup; then
+        rustup target add wasm32-unknown-unknown 2>/dev/null || true
+        rustup component add rust-analyzer clippy rustfmt 2>/dev/null || true
+    fi
+
+    print_success "Rust tooling installed"
+}
+
+setup_rust_cargo_config() {
+    is_linux || return 0
+    command_exists mold || return 0
+
+    local cfg="$HOME/.cargo/config.toml"
+    local marker="# dev-setup: mold linker"
+
+    if [[ -f "$cfg" ]] && grep -q "$marker" "$cfg"; then
+        print_info "Cargo mold config already present"
+        return 0
+    fi
+
+    if [[ -f "$cfg" ]]; then
+        print_warning "$cfg exists — not modifying it automatically"
+        print_info "To use mold, add:"
+        print_info '  [target.x86_64-unknown-linux-gnu]'
+        print_info '  rustflags = ["-C", "link-arg=-fuse-ld=mold"]'
+        return 0
+    fi
+
+    ensure_directory "$HOME/.cargo"
+    cat > "$cfg" << EOF
+$marker
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+EOF
+    print_success "Cargo configured to link with mold"
+}
+
 setup_development_tools() {
     print_header "Development Tools Setup"
 
@@ -1579,20 +1688,18 @@ setup_development_tools() {
         aur_install pnpm yarn || true
     fi
 
-    # Install Rust tools for web development
+    # Rust toolchain support tools
     if is_macos; then
         brew install cargo-binstall sccache wasm-pack || true
     else
-        aur_install cargo-binstall sccache wasm-pack || true
+        # mold: dramatically faster linking, which dominates Rust rebuild time
+        aur_install cargo-binstall sccache wasm-pack mold lld || true
     fi
-
-    # REMOVED: Go tools
 
     # Bun is already installed via mise
 
-    # Install Rust web development tools
-    cargo install cargo-watch cargo-edit cargo-outdated cargo-audit cargo-expand || true
-    # REMOVED: Go packages
+    setup_rust_tooling
+    setup_rust_cargo_config
 
     # Code Editors
     if is_macos; then
@@ -1775,7 +1882,9 @@ setup_productivity_apps() {
         # Steam and gaming essentials for Linux (optional — ~2GB+ download)
         read -p "Install gaming packages (Steam, Lutris, Wine, MangoHud)? [y/N] " -n 1 -r
         echo
-        [[ ! $REPLY =~ ^[Yy]$ ]] && { print_info "Skipping gaming packages"; return 0; }
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Skipping gaming packages"
+        else
 
         aur_install \
             steam \
@@ -1784,14 +1893,19 @@ setup_productivity_apps() {
             winetricks \
             gamemode lib32-gamemode \
             mangohud lib32-mangohud \
+            gamescope \
             goverlay \
             protonup-qt \
             vulkan-tools \
             vkbasalt lib32-vkbasalt \
             || true
 
-        # Enable gamemode for user
-        sudo usermod -aG gamemode "$USER" || true
+        # Only meaningful if the package actually landed — the group is created by it
+        if getent group gamemode &>/dev/null; then
+            sudo usermod -aG gamemode "$USER" || true
+        else
+            print_warning "gamemode group missing — package install likely failed"
+        fi
 
         # GameMode config for performance
         ensure_directory "$HOME/.config/gamemode"
@@ -1864,6 +1978,7 @@ EOF
         print_info "Recommended Steam launch options:"
         print_info "  gamemoderun mangohud %command%"
         print_info "  PROTON_ENABLE_NVAPI=1 gamemoderun %command%  (for NVIDIA DLSS)"
+        fi
     fi
 
     # Screen Recording (for gaming clips)
@@ -1874,6 +1989,197 @@ EOF
     fi
 
     print_success "Productivity apps setup complete"
+}
+
+# ==========================================
+# Game Development
+# ==========================================
+
+setup_game_development() {
+    print_header "Game Development"
+
+    read -p "Install game development tools (engines, Vulkan SDK, profilers)? [y/N] " -n 1 -r
+    echo
+    [[ ! $REPLY =~ ^[Yy]$ ]] && { print_info "Skipping game development tools"; return 0; }
+
+    if is_macos; then
+        brew install --cask godot blender || true
+        brew install molten-vk || true
+        print_success "Game development tools installed"
+        return 0
+    fi
+
+    # Engines and content tools
+    aur_install godot blender || true
+
+    # Vulkan: loader, headers, and the validation layers you actually debug against
+    aur_install \
+        vulkan-headers \
+        vulkan-tools \
+        vulkan-validation-layers lib32-vulkan-validation-layers \
+        vulkan-icd-loader lib32-vulkan-icd-loader \
+        spirv-tools \
+        glslang \
+        shaderc \
+        || true
+
+    # Graphics debugging and profiling
+    aur_install renderdoc || true
+    aur_install tracy || print_info "tracy unavailable — skip or build from source"
+
+    # System libraries Rust engines (Bevy, macroquad, winit) link against on Linux
+    aur_install \
+        alsa-lib \
+        libxkbcommon \
+        libx11 libxi libxcursor libxrandr libxinerama \
+        wayland wayland-protocols \
+        systemd-libs \
+        fontconfig \
+        || true
+
+    # Native debugging
+    aur_install lldb gdb || true
+
+    print_success "Game development tools installed"
+    print_info "Vulkan validation: VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation <binary>"
+    print_info "Verify the stack with: vulkaninfo --summary"
+}
+
+# ==========================================
+# CachyOS / AMD Hardware Tuning
+# ==========================================
+
+setup_cachyos_tuning() {
+    is_linux || return 0
+    is_arch_linux || return 0
+
+    print_header "Hardware Tuning"
+
+    # ---- CPU frequency driver ----
+    local drv epp
+    drv=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver 2>/dev/null || echo unknown)
+    epp=$(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference 2>/dev/null || echo n/a)
+    print_info "CPU scaling driver: $drv (EPP: $epp)"
+    if [[ "$drv" == "acpi-cpufreq" ]] && grep -qi 'amd' /proc/cpuinfo; then
+        print_warning "amd_pstate is not active — add amd_pstate=active to the kernel cmdline for better scaling"
+    fi
+
+    # ---- Asymmetric X3D CCD switching ----
+    if has_amd_x3d_switch; then
+        print_step "Installing x3d-mode helper..."
+        # Root-owned in /usr/local/bin: it writes to sysfs via sudo, so it must not
+        # be user-writable.
+        sudo install -o root -g root -m 755 \
+            "$CONFIGS_DIR/scripts/x3d-mode.sh" /usr/local/bin/x3d-mode
+        print_success "x3d-mode installed"
+        print_info "Current mode: $(cat /sys/bus/platform/drivers/amd_x3d_vcache/*/amd_x3d_mode 2>/dev/null)"
+        print_info "  x3d-mode cache      -> prefer V-Cache CCD (gaming)"
+        print_info "  x3d-mode frequency  -> prefer high-clock CCD (compiling)"
+
+        setup_x3d_gamemode_hook
+    fi
+
+    # ---- sched_ext ----
+    if has_sched_ext; then
+        print_info "sched_ext is available in this kernel"
+        if command_exists scx_loader && systemctl list-unit-files scx_loader.service &>/dev/null; then
+            if [[ $(systemctl is-enabled scx_loader.service 2>/dev/null) != enabled ]]; then
+                echo
+                read -p "Enable scx_loader (pluggable schedulers, e.g. scx_lavd for gaming)? [y/N] " -n 1 -r
+                echo
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    sudo systemctl enable --now scx_loader.service || print_warning "Could not enable scx_loader"
+                    print_success "scx_loader enabled"
+                fi
+            else
+                print_info "scx_loader already enabled"
+            fi
+            command_exists scx-manager && print_info "Pick a scheduler with: scx-manager (GUI)"
+            print_info "Or try one directly: sudo scx_lavd   (latency-tuned, good for games)"
+        fi
+    fi
+
+    print_success "Hardware tuning complete"
+}
+
+# Switch to the V-Cache CCD while a game runs, back to high-clock when it exits.
+# Needs a NOPASSWD sudoers entry, so it is strictly opt-in.
+setup_x3d_gamemode_hook() {
+    local gm_ini="$HOME/.config/gamemode.ini"
+    command_exists gamemoded || return 0
+    [[ -f "$gm_ini" ]] || return 0
+    grep -q 'x3d-mode' "$gm_ini" && { print_info "GameMode X3D hook already configured"; return 0; }
+
+    echo
+    print_warning "Optional: switch to the V-Cache CCD automatically while games run."
+    print_warning "This requires a sudoers rule letting your user run exactly two commands"
+    print_warning "without a password: '/usr/local/bin/x3d-mode cache' and '... frequency'."
+    read -p "Configure this? [y/N] " -n 1 -r
+    echo
+    [[ ! $REPLY =~ ^[Yy]$ ]] && { print_info "Skipped X3D GameMode hook"; return 0; }
+
+    local sudoers=/etc/sudoers.d/10-x3d-mode
+    sudo tee "$sudoers" > /dev/null << EOF
+$USER ALL=(root) NOPASSWD: /usr/local/bin/x3d-mode cache, /usr/local/bin/x3d-mode frequency
+EOF
+    sudo chmod 0440 "$sudoers"
+
+    if ! sudo visudo -c -f "$sudoers" &>/dev/null; then
+        sudo rm -f "$sudoers"
+        print_error "sudoers validation failed — rule removed, no changes made"
+        return 1
+    fi
+
+    backup_file "$gm_ini"
+    sed -i 's|^start=.*|&\nstart=/usr/local/bin/x3d-mode cache|; s|^end=.*|&\nend=/usr/local/bin/x3d-mode frequency|' "$gm_ini"
+    print_success "GameMode will switch CCD preference automatically"
+}
+
+# ==========================================
+# Gaming Network (host firewall + router UPnP)
+# ==========================================
+
+setup_gaming_network() {
+    is_linux || return 0
+
+    print_header "Gaming Network"
+
+    # upnpc talks to the router's IGD; gamenet needs it to diagnose the router layer
+    if ! command_exists upnpc; then
+        print_step "Installing miniupnpc..."
+        aur_install miniupnpc || print_warning "Could not install miniupnpc"
+    fi
+
+    ensure_directory "$HOME/.local/bin"
+    for tool in game-firewall gamenet; do
+        cp -f "$CONFIGS_DIR/scripts/${tool}.sh" "$HOME/.local/bin/$tool"
+        chmod +x "$HOME/.local/bin/$tool"
+    done
+    print_success "Installed game-firewall and gamenet to ~/.local/bin"
+
+    if ! command_exists ufw; then
+        print_info "ufw not installed - nothing is blocking inbound game traffic"
+    elif [[ $(systemctl is-active ufw 2>/dev/null) != active ]]; then
+        print_info "ufw installed but inactive - run 'sudo game-firewall' if you enable it later"
+    else
+        print_warning "ufw is active and defaults to dropping inbound connections."
+        print_info "This blocks hosted games AND the router's UPnP replies, so games cannot"
+        print_info "forward their own ports either. Both fail silently."
+        echo
+        read -p "Open the firewall for multiplayer game hosting? [y/N] " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo "$HOME/.local/bin/game-firewall" || print_warning "game-firewall failed"
+        else
+            print_info "Skipped. Run 'sudo game-firewall' later."
+        fi
+    fi
+
+    echo
+    print_info "Router side: enable UPnP in your router admin UI, and give this machine"
+    print_info "a static DHCP lease. Then verify the whole chain with:  gamenet check"
+
+    print_success "Gaming network setup complete"
 }
 
 # ==========================================
@@ -2252,6 +2558,9 @@ main() {
     setup_git
     setup_development_tools
     setup_productivity_apps
+    setup_gaming_network
+    setup_game_development
+    setup_cachyos_tuning
     setup_advanced_tools
     # DISABLED: Keyboard shortcuts - let user configure manually
     # setup_keyboard_shortcuts
@@ -2269,6 +2578,7 @@ main() {
     echo "  - Docker/Colima for containerization"
     echo "  - Full CLI toolkit (ripgrep, fzf, bat, eza, zoxide, etc.)"
     echo "  - Gaming tools (Steam, Lutris, Wine on Linux)"
+    echo "  - Multiplayer hosting: firewall rules + gamenet diagnostics"
     echo "  - Productivity tools (Slack, Discord, 1Password)"
     echo
     echo "Next steps:"
@@ -2284,6 +2594,7 @@ main() {
     echo "  - frg <term>  : Ripgrep with fzf preview"
     echo "  - lg          : Lazygit"
     echo "  - y           : Yazi file manager"
+    echo "  - gamenet check <port> : Diagnose multiplayer connectivity"
     echo
     print_info "Happy coding!"
 

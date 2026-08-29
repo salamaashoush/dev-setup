@@ -101,6 +101,7 @@ The setup script installs:
 - **Container Tools**: Docker, Colima (macOS), lazydocker
 - **Cloud Tools**: kubectl, helm, terraform, AWS/Azure/GCP CLIs
 - **AI Tools**: Claude Code, Ollama, LM Studio
+- **Gaming**: Steam, Lutris, Wine, GameMode, MangoHud, plus multiplayer hosting tools (`gamenet`, `game-firewall`)
 - **And much more**: 200+ tools total
 
 ### Post-Installation
@@ -136,6 +137,11 @@ mac-dev-setup/
 │   ├── tokyonight-storm.yml # Theme configuration
 │   ├── project-templates.sh # Project template generator
 │   ├── project-templates/   # Project templates
+│   ├── scripts/             # Scripts installed to ~/.local/bin (x3d-mode to /usr/local/bin)
+│   │   ├── game-firewall.sh # Open ufw for multiplayer hosting
+│   │   ├── gamenet.sh       # Diagnose multiplayer connectivity
+│   │   ├── x3d-mode.sh      # AMD X3D CCD preference switch
+│   │   └── ghostty-dropdown.sh # Drop-down terminal toggle
 │   ├── claude/           # Claude Code configs
 │   │   ├── CLAUDE.md     # Claude instructions
 │   │   └── commands/     # Custom commands
@@ -256,6 +262,49 @@ The `setup-all.sh` script performs the following steps:
 - Raycast/Alfred (launchers)
 - Rectangle (window management)
 - CleanMyMac (system maintenance)
+
+### Gaming Network
+
+Multiplayer hosting fails silently on a default Arch/CachyOS install: `ufw` drops all
+inbound connections, and it also drops the router's UPnP reply — so games cannot even
+forward their own ports. Two tools are installed to `~/.local/bin`:
+
+| Command | Purpose |
+|---------|---------|
+| `gamenet check [port]` | Diagnose host firewall, router UPnP, CGNAT, and end-to-end reachability |
+| `sudo game-firewall` | Open `ufw` for Steam and ~30 self-hosted game servers (idempotent) |
+| `gamenet map <port> [proto]` | Add a UPnP port mapping manually |
+
+The LAN subnet is auto-detected from the default route, so both work on any network.
+`DEFAULT_INPUT_POLICY` stays `DROP` — specific ports are opened, the firewall is not disabled.
+
+See [docs/tools/gaming-network.md](docs/tools/gaming-network.md) for the full
+explanation, including why enabling UPnP on the router appears to do nothing until
+the host firewall is fixed first.
+
+### Game Development
+
+Prompted (large download). Godot and Blender, the Vulkan stack with validation layers
+(including `lib32-` variants for Proton/32-bit titles), RenderDoc and Tracy for
+profiling, `lldb`/`gdb`, and the system libraries Rust engines like Bevy link against
+on Linux.
+
+See [docs/tools/game-development.md](docs/tools/game-development.md).
+
+### CachyOS & Hardware Tuning
+
+CachyOS ships its own tuned defaults, so generic Arch tuning is deliberately skipped.
+What the installer adds are the hardware knobs left at defaults:
+
+| Feature | What it does |
+|---------|--------------|
+| `x3d-mode` | Switch CCD preference on 7950X3D/9950X3D — V-Cache for gaming, high-clock for compiling |
+| GameMode hook | Opt-in: switch to the V-Cache CCD automatically while a game runs |
+| `scx_loader` | Opt-in: enable pluggable `sched_ext` schedulers (`scx_lavd` for gaming) |
+| NVIDIA open modules | Detects Blackwell (RTX 50), where proprietary modules are unsupported |
+| Hybrid GPU | Installs drivers for discrete **and** integrated GPUs, not just the first match |
+
+See [docs/tools/cachyos-hardware.md](docs/tools/cachyos-hardware.md).
 
 ### Advanced Dev Tools
 

@@ -312,6 +312,55 @@ systemctl --user restart pipewire
 systemctl --user restart pipewire-pulse
 ```
 
+## Multiplayer Gaming Issues
+
+Run `gamenet check <port>` first — it isolates which of the three layers is broken
+(host firewall, router, ISP) and prints the fix. See
+[Gaming Network](../tools/gaming-network.md) for the full explanation.
+
+**Issue**: Cannot host a game — peers cannot connect, lobby is not advertised online
+
+```bash
+# ufw defaults to dropping all inbound connections
+sudo game-firewall
+```
+
+**Issue**: `upnpc -l` says "No IGD UPnP Device found" even though UPnP is enabled on the router
+
+This is the most confusing failure in the whole setup, and the order matters.
+UPnP discovery sends a multicast `M-SEARCH`; the router replies **unicast**.
+Conntrack cannot match that reply to the multicast request, so `ufw` drops it —
+UPnP looks dead even when the router is configured correctly.
+
+```bash
+# Fix the host firewall FIRST, then re-test the router
+sudo game-firewall
+gamenet check
+```
+
+**Issue**: Game works on LAN but not over the internet
+
+```bash
+gamenet check <port>
+```
+
+If it reports CGNAT (a public IP in `100.64.0.0/10`), port forwarding cannot work
+at all. Use a tunnel (Tailscale, playit.gg) or request a real IPv4 from the ISP.
+
+**Issue**: Hosting worked, then broke about a week later
+
+A manually added UPnP mapping carries a finite lease and expires. Enable UPnP
+inside the game so it re-maps on every launch, or re-add it:
+
+```bash
+gamenet map <port> tcp
+```
+
+**Issue**: A container port is reachable even though `ufw` denies it
+
+Docker and k3s write their own iptables rules and bypass `ufw`. This is expected —
+`ufw` does not govern published container ports.
+
 ## Quick Fixes Reference
 
 ```bash

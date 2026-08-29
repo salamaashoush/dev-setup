@@ -43,6 +43,32 @@
 - **cargo-outdated**: Check for outdated dependencies
 - **cargo-audit**: Security vulnerability audit
 - **cargo-expand**: Show macro expansion results
+- **cargo-nextest**: Faster test runner with better output
+- **bacon**: Background code checker
+
+**Targets & components**: `wasm32-unknown-unknown` (Leptos, Yew, wasm-pack, Bevy web
+builds), plus `rust-analyzer`, `clippy`, `rustfmt`.
+
+**Tools are installed with `cargo binstall`** where possible — it downloads prebuilt
+binaries instead of compiling each one from source, falling back to `cargo install`.
+
+#### mold linker
+
+On Linux, `mold` and `lld` are installed and cargo is configured to link with mold:
+
+```toml
+# ~/.cargo/config.toml
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+```
+
+Linking dominates incremental Rust rebuild time, so this is usually the single
+largest win on a multi-core machine.
+
+**The installer will not overwrite an existing `~/.cargo/config.toml`.** If one is
+already present it prints the snippet and leaves the file alone — a global cargo
+config affects every project on the machine, so clobbering it is not something to do
+silently.
 
 ### Go
 **Description**: Statically typed, compiled language by Google  

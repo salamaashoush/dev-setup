@@ -10,6 +10,9 @@ This documentation provides a complete guide to all tools, configurations, and k
 - [Productivity Tools](./tools/productivity.md)
 - [System Tools](./tools/system.md)
 - [Network Tools](./tools/network.md)
+- [Gaming Network](./tools/gaming-network.md)
+- [Game Development](./tools/game-development.md)
+- [CachyOS & Hardware Tuning](./tools/cachyos-hardware.md)
 - [Container & Cloud Tools](./tools/containers-cloud.md)
 
 ### ⌨️ [Keyboard Shortcuts](./shortcuts/)

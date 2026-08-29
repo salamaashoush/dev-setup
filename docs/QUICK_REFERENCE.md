@@ -137,6 +137,23 @@ dust
 btop
 ```
 
+### Multiplayer Gaming
+```bash
+gamenet check              # Diagnose firewall + router + ISP
+gamenet check 25565        # ...end-to-end for one port
+sudo game-firewall         # Open ufw for game hosting
+gamenet maps               # List UPnP port mappings
+```
+
+### Hardware Tuning (AMD X3D / CachyOS)
+```bash
+x3d-mode                   # Show current CCD preference
+x3d-mode cache             # Gaming - prefer V-Cache CCD
+x3d-mode frequency         # Compiling - prefer high-clock CCD
+scx-manager                # Pick a sched_ext scheduler (GUI)
+sudo scx_lavd              # Latency-tuned scheduler for gaming
+```
+
 ## 🔧 Configuration Locations
 
 - Shell: `~/.zshrc`

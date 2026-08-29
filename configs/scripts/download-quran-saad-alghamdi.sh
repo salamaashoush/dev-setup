@@ -1,0 +1,167 @@
+#!/bin/bash
+#
+# Download Complete Quran - Saad Al-Ghamdi
+# Source: QuranicAudio.com via Quran.com
+
+BASE_URL="https://download.quranicaudio.com/quran/sa3d_al-ghaamidi/complete"
+OUTPUT_DIR="$HOME/Quran - Saad Al-Ghamdi"
+
+# Surah names
+SURAHS=(
+  "Al-Fatihah"
+  "Al-Baqarah"
+  "Ali 'Imran"
+  "An-Nisa"
+  "Al-Ma'idah"
+  "Al-An'am"
+  "Al-A'raf"
+  "Al-Anfal"
+  "At-Tawbah"
+  "Yunus"
+  "Hud"
+  "Yusuf"
+  "Ar-Ra'd"
+  "Ibrahim"
+  "Al-Hijr"
+  "An-Nahl"
+  "Al-Isra"
+  "Al-Kahf"
+  "Maryam"
+  "Taha"
+  "Al-Anbya"
+  "Al-Hajj"
+  "Al-Mu'minun"
+  "An-Nur"
+  "Al-Furqan"
+  "Ash-Shu'ara"
+  "An-Naml"
+  "Al-Qasas"
+  "Al-'Ankabut"
+  "Ar-Rum"
+  "Luqman"
+  "As-Sajdah"
+  "Al-Ahzab"
+  "Saba"
+  "Fatir"
+  "Ya-Sin"
+  "As-Saffat"
+  "Sad"
+  "Az-Zumar"
+  "Ghafir"
+  "Fussilat"
+  "Ash-Shuraa"
+  "Az-Zukhruf"
+  "Ad-Dukhan"
+  "Al-Jathiyah"
+  "Al-Ahqaf"
+  "Muhammad"
+  "Al-Fath"
+  "Al-Hujurat"
+  "Qaf"
+  "Adh-Dhariyat"
+  "At-Tur"
+  "An-Najm"
+  "Al-Qamar"
+  "Ar-Rahman"
+  "Al-Waqi'ah"
+  "Al-Hadid"
+  "Al-Mujadila"
+  "Al-Hashr"
+  "Al-Mumtahanah"
+  "As-Saf"
+  "Al-Jumu'ah"
+  "Al-Munafiqun"
+  "At-Taghabun"
+  "At-Talaq"
+  "At-Tahrim"
+  "Al-Mulk"
+  "Al-Qalam"
+  "Al-Haqqah"
+  "Al-Ma'arij"
+  "Nuh"
+  "Al-Jinn"
+  "Al-Muzzammil"
+  "Al-Muddaththir"
+  "Al-Qiyamah"
+  "Al-Insan"
+  "Al-Mursalat"
+  "An-Naba"
+  "An-Nazi'at"
+  "'Abasa"
+  "At-Takwir"
+  "Al-Infitar"
+  "Al-Mutaffifin"
+  "Al-Inshiqaq"
+  "Al-Buruj"
+  "At-Tariq"
+  "Al-A'la"
+  "Al-Ghashiyah"
+  "Al-Fajr"
+  "Al-Balad"
+  "Ash-Shams"
+  "Al-Layl"
+  "Ad-Duhaa"
+  "Ash-Sharh"
+  "At-Tin"
+  "Al-'Alaq"
+  "Al-Qadr"
+  "Al-Bayyinah"
+  "Az-Zalzalah"
+  "Al-'Adiyat"
+  "Al-Qari'ah"
+  "At-Takathur"
+  "Al-'Asr"
+  "Al-Humazah"
+  "Al-Fil"
+  "Quraysh"
+  "Al-Ma'un"
+  "Al-Kawthar"
+  "Al-Kafirun"
+  "An-Nasr"
+  "Al-Masad"
+  "Al-Ikhlas"
+  "Al-Falaq"
+  "An-Nas"
+)
+
+mkdir -p "$OUTPUT_DIR"
+
+echo "╔══════════════════════════════════════════════════════╗"
+echo "║   Downloading Complete Quran - Saad Al-Ghamdi       ║"
+echo "║   114 Surahs from QuranicAudio.com                  ║"
+echo "╚══════════════════════════════════════════════════════╝"
+echo ""
+
+TOTAL=${#SURAHS[@]}
+DOWNLOADED=0
+FAILED=0
+
+for i in $(seq 1 $TOTAL); do
+  PADDED=$(printf "%03d" "$i")
+  NAME="${SURAHS[$((i-1))]}"
+  FILENAME="${PADDED} - ${NAME}.mp3"
+  URL="${BASE_URL}/${PADDED}.mp3"
+
+  if [ -f "$OUTPUT_DIR/$FILENAME" ]; then
+    echo "  [SKIP] $FILENAME (already exists)"
+    DOWNLOADED=$((DOWNLOADED + 1))
+    continue
+  fi
+
+  echo -n "  [$PADDED/$TOTAL] Downloading: $FILENAME ... "
+
+  if curl -sS -L -f -o "$OUTPUT_DIR/$FILENAME" "$URL"; then
+    echo "✓"
+    DOWNLOADED=$((DOWNLOADED + 1))
+  else
+    echo "✗ FAILED"
+    rm -f "$OUTPUT_DIR/$FILENAME"
+    FAILED=$((FAILED + 1))
+  fi
+done
+
+echo ""
+echo "════════════════════════════════════════════════════════"
+echo "  Done! Downloaded: $DOWNLOADED | Failed: $FAILED"
+echo "  Location: $OUTPUT_DIR"
+echo "════════════════════════════════════════════════════════"
