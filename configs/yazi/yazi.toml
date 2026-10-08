@@ -25,9 +25,8 @@ image_quality = 75
 # Default file openers
 edit = [
 	{ run = '$EDITOR "$@"', desc = "Open with $EDITOR", block = true },
-	{ run = 'hx "$@"', desc = "Open with Helix", block = true },
 	{ run = 'nvim "$@"', desc = "Open with Neovim", block = true },
-	{ run = 'code "$@"', desc = "Open with VS Code", block = true },
+	{ run = 'zed "$@"', desc = "Open with Zed", orphan = true },
 ]
 
 open = [

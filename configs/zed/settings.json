@@ -118,9 +118,6 @@
   "collaboration_panel": {
     "dock": "right"
   },
-  "chat_panel": {
-    "dock": "right"
-  },
 
   // Preview tabs
   "preview_tabs": {
@@ -271,9 +268,8 @@
     "Python": {
       "tab_size": 4,
       "formatter": {
-        "external": {
-          "command": "ruff",
-          "arguments": ["format", "-"]
+        "language_server": {
+          "name": "ruff"
         }
       }
     },
@@ -340,8 +336,8 @@
   // ===========================================
   // AI Features
   // ===========================================
-  "features": {
-    "edit_prediction_provider": "zed"
+  "edit_predictions": {
+    "provider": "zed"
   },
   "show_edit_predictions": true,
 
@@ -365,7 +361,7 @@
 
   // ===========================================
   // Auto-install Extensions
-  // Note: Rust, TypeScript, Python, Go, C/C++ are built-in
+  // Note: Rust, TypeScript, Python (with ruff), Go, C/C++, YAML and Tailwind are built-in
   // ===========================================
   "auto_install_extensions": {
     // Theme + icons (icon_theme above is "Catppuccin Macchiato")
@@ -374,19 +370,16 @@
 
     // Config files
     "toml": true,
-    "yaml": true,
 
     // Web
     "html": true,
     "make": true,
-    "tailwindcss": true,
 
     // DevOps
     "dockerfile": true,
     "terraform": true,
 
     // Tools
-    "git-firefly": true,
-    "ruff": true
+    "git-firefly": true
   }
 }

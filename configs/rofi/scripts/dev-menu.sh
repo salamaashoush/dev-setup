@@ -5,7 +5,7 @@
 
 # Define development tools (command to check : display name : launch command)
 declare -A dev_tools=(
-    ["  VS Code"]="code"
+    ["  Zed"]="zed"
     ["  Kitty"]="kitty"
     ["  Lazygit"]="lazygit"
     ["  Btop"]="btop"
@@ -15,7 +15,7 @@ declare -A dev_tools=(
 
 # Launch commands (may differ from check command)
 declare -A dev_launch=(
-    ["  VS Code"]="code"
+    ["  Zed"]="zed"
     ["  Kitty"]="kitty"
     ["  Lazygit"]="kitty -e lazygit"
     ["  Btop"]="kitty -e btop"
