@@ -1,78 +1,31 @@
 # Application Launcher Shortcuts
 
-## Raycast (macOS)
+## Bolt (macOS)
+
+[Bolt](https://github.com/salamaashoush/bolt) is a native macOS launcher (macOS 15 or later). `install.sh` clones it to `~/.local/share/bolt` and runs `make install` as its last step, building with Swift 6.2 from the Command Line Tools into `/Applications/Bolt.app`. The first build creates a self-signed signing certificate: approve the prompt to trust it and choose "Always Allow" for codesign, and later builds sign without asking. `install.sh` also turns off Spotlight's `Cmd+Space` so Bolt can take it.
 
 ### Core Navigation
-- `Cmd+Space` → Open Raycast
-- `Esc` → Close/Go back
-- `Tab` → Autocomplete
-- `Enter` → Execute
-- `Cmd+Enter` → Execute and close
-- `Cmd+K` → Clear search
-- `Cmd+,` → Open preferences
+- `Cmd+Space` / `Opt+Space` → Show or hide Bolt
+- `Up/Down`, `Ctrl+N/P`, `Ctrl+J/K` → Move selection
+- `Enter` → Primary action
+- `Cmd+Enter` → Secondary action
+- `Opt+Enter` → Third action
+- `Cmd+K` → Action list for the selected result
+- `Cmd+1-9` → Run the nth result
+- `Tab` → Complete the query with the selected result
+- `Cmd+Delete` → Clear the query
+- `Cmd+,` → Settings (`~/Library/Application Support/Bolt/config.json`)
+- `Cmd+W` / `Esc` → Close (`Esc` clears a non-empty query first)
 
-### Search Modifiers
-- `>` → Search commands only
-- `@` → Search for people/contacts
-- `#` → Search snippets
-- `!` → Search scripts
-- `?` → Search help
+### Global Hotkeys
+- `Cmd+Shift+H` → Record a global hotkey for the selected command; the command then runs system-wide without opening Bolt
 
-### Window Management (Built-in)
-- `Cmd+Opt+Space` → Window management mode
-- Then type:
-  - `left` → Left half
-  - `right` → Right half
-  - `max` → Maximize
-  - `center` → Center window
-  - `full` → Fullscreen
-
-### Clipboard History
-- `Cmd+Opt+V` → Open clipboard history
-- `↑↓` → Navigate items
-- `Enter` → Paste
-- `Cmd+C` → Copy again
-- `Cmd+Delete` → Remove item
-- `Space` → Preview
-- `Cmd+F` → Search in history
-
-### Quick Actions
-- `Cmd+Space` then...
-  - `cal` → Calendar
-  - `rem` → Reminders
-  - `emoji` → Emoji picker (or `Cmd+Opt+E`)
-  - `color` → Color picker
-  - `kill` → Kill process
-  - `empty` → Empty trash
-  - `lock` → Lock screen
-  - `sleep` → Sleep computer
-
-### File Search
-- `Cmd+Space` → `f <query>` → Search files
-- `Cmd+Space` → `o <app>` → Open recent files in app
-- `Cmd+O` → Quick file browser (when in Raycast)
-
-### Developer Commands
-- `>github` → GitHub commands
-- `>brew` → Homebrew commands
-- `>ip` → Show IP addresses
-- `>dns` → DNS lookup
-- `>port` → Kill port
-- `>encode` → Base64 encode/decode
-- `>uuid` → Generate UUID
-- `>lorem` → Lorem ipsum
-
-### Custom Scripts
-- `!script-name` → Run custom script
-- `Cmd+Shift+C` → Create new script
-- `Cmd+Option+R` → Reload scripts
-
-### System Commands
-- Type calculations directly: `2+2`, `sqrt(16)`
-- `define <word>` → Dictionary
-- `translate <text>` → Translation
-- `weather` → Weather forecast
-- `tz <city>` → Time zones
+### Built-in Commands
+- **Clipboard History**: searchable; paste, copy, pin, delete
+- **Window management**: halves, thirds, maximize, center, and more (needs Accessibility)
+- **Snippets**: reusable text from `snippets.json`, pasted into the app you came from
+- **Quicklinks**: `gh <query>` searches GitHub, `g <query>` searches Google
+- **File search**: Spotlight search under your home directory; `content:` and `kind:` narrow it
 
 ## Rofi (Linux)
 
@@ -215,7 +168,7 @@ configuration {
 ### Efficiency Hacks
 
 1. **Abbreviations**:
-   - Raycast learns from usage
+   - Bolt ranks by fuzzy match and frecency
    - Rofi weights frequently used items
    - Type minimum unique characters
 
@@ -231,11 +184,8 @@ configuration {
 
 ### Custom Shortcuts
 
-**Raycast**:
-```bash
-# Create alias commands
-Preferences → Extensions → Search for "Alias"
-```
+**Bolt**:
+- Select a command and press `Cmd+Shift+H` to give it a global hotkey
 
 **Rofi Scripts** (`~/.config/rofi/scripts/`):
 ```bash
@@ -253,11 +203,11 @@ esac
 ### Integration Tips
 
 1. **Browser Integration**:
-   - Raycast: Browser bookmarks extension
+   - Bolt: quicklinks with `{query}` templates in `quicklinks.json`
    - Rofi: Firefox/Chrome bookmark scripts
 
 2. **Password Managers**:
-   - Raycast: 1Password extension
+   - Bolt: clipboard history skips entries password managers mark concealed or transient
    - Rofi: `rofi-pass` for pass
 
 3. **Project Switching**:
@@ -267,10 +217,10 @@ esac
 
 ## Troubleshooting
 
-### Raycast Not Opening
-- Check: System Preferences → Security → Accessibility
-- Reset: `defaults delete com.raycast.macos`
-- Reinstall: `brew reinstall --cask raycast`
+### Bolt Not Opening
+- `Cmd+Space` does nothing: Spotlight still holds it. Turn it off in System Settings > Keyboard > Keyboard Shortcuts > Spotlight, or use `Opt+Space`
+- Window commands do nothing: grant Accessibility in System Settings > Privacy & Security > Accessibility
+- Rebuild: re-run `./install.sh`, or `make -C ~/.local/share/bolt install`
 
 ### Rofi Not Responding
 - Check keybinding conflicts: `xev` or `wev`

@@ -86,18 +86,14 @@ Tools enhance rather than hinder workflow:
 
 ### Code Editors
 
-**Why multiple editors?**
-- VS Code: Best extension ecosystem
-- Zed: Fastest performance, future-focused
-- Cursor: AI integration for assisted coding
-- Neovim: Terminal-based, works over SSH
+**Why two editors?**
+- Zed: Native GUI editor, fast, built-in language servers and edit predictions
+- Neovim (LazyVim): Terminal-based, works over SSH, Claude Code through the `ai.claudecode` extra
 
 **Editor selection matrix:**
 | Need | Choose |
 |------|---------|
-| Extensions | VS Code |
-| Performance | Zed |
-| AI Assistance | Cursor |
+| GUI, performance | Zed |
 | Terminal/SSH | Neovim |
 
 ### Build Tools
@@ -117,31 +113,31 @@ Tools enhance rather than hinder workflow:
 
 **Language-specific choices:**
 - **Node.js**: pnpm (disk efficient), bun (speed)
-- **Python**: uv (fastest), poetry (projects)
+- **Python**: uv for packages, virtualenvs, and Python CLIs
 - **Rust**: cargo with binstall (binary caching)
-- **System**: Homebrew (macOS), yay (Arch)
+- **Tools**: mise for every tool its registry carries (runtimes, CLI tools, Claude Code), so macOS and Linux run the same versions
+- **System**: Homebrew (macOS), yay (Arch), only for what needs system integration or ships no macOS arm64 binary (zsh, git, eza, btop, Docker, GUI apps, fonts)
 
 ## Excluded Tools & Why
 
 ### Not Included
-1. **Tmux**: Kitty + Zellij provide same features with better UX
+1. **Tmux**: herdr keeps the tmux bindings and also labels the coding agent in each pane and resumes Claude Code sessions after a server restart
 2. **Vim (classic)**: Neovim is strictly better
 3. **Terraform/Vagrant**: BUSL license concerns
 4. **Atuin**: Privacy concerns, adds complexity
-5. **Docker Desktop (Linux)**: OrbStack/Colima lighter
+5. **Docker Desktop**: Colima (macOS) and Docker Engine (Linux) are lighter
 
 ### Deprecated Tools
 - `ack` → Replaced by ripgrep
 - `ctags` → LSP servers better
-- `screen` → Zellij more modern
-- `nvm` → fnm is faster
+- `screen` → herdr
+- `nvm` → mise manages Node with the other runtimes
 
 ## Performance Benchmarks
 
 ### Startup Times
-- Shell (zsh + zinit): <100ms
+- Shell (zsh + zinit): 37ms to first prompt (zsh-bench in an Arch container)
 - Kitty terminal: <50ms  
-- VS Code: ~2s
 - Zed: <200ms
 - Neovim: <100ms
 
@@ -158,7 +154,6 @@ Tools enhance rather than hinder workflow:
 
 ### Watching
 - **Warp Terminal**: Promising but macOS only currently
-- **Helix Editor**: Modern modal editor, may replace Neovim
 - **Mold Linker**: 10x faster linking for large C++ projects
 - **Ruff**: Already included, will expand Python tooling
 

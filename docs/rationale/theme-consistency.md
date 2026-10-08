@@ -55,27 +55,29 @@ background_blur 64
 
 ### Shell (Starship)
 ```toml
-# Matching colors in prompt
+# Matching colors in prompt (palette from folke/tokyonight.nvim, storm)
+palette = "tokyonight_storm"
+
 [character]
-success_symbol = "[➜](bold green)"
-error_symbol = "[➜](bold red)"
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
 
 [directory]
-style = "blue bold"
+style = "bold blue"
 
 [git_branch]
-style = "purple bold"
+style = "bold magenta"
 ```
 
 ### Editors
 
-**VS Code**:
+**Zed** (theme from the `tokyo-night` extension, installed on first launch):
 ```json
 {
-  "workbench.colorTheme": "Tokyo Night Storm",
-  "editor.fontSize": 14,
-  "editor.fontFamily": "CaskaydiaCove NF",
-  "terminal.integrated.fontFamily": "CaskaydiaCove NF"
+  "theme": "Tokyo Night Storm",
+  "icon_theme": "Catppuccin Macchiato",
+  "buffer_font_family": "CaskaydiaCove Nerd Font",
+  "buffer_font_size": 14
 }
 ```
 
@@ -91,7 +93,6 @@ vim.g.tokyonight_transparent = true
 **macOS**:
 - Terminal.app profiles
 - iTerm2 color presets
-- Raycast themes
 
 **Linux (KDE)**:
 - Konsole color schemes
@@ -114,10 +115,12 @@ export BAT_THEME="TokioNight"
 
 **fzf**:
 ```bash
+# Tokyo Night Storm, from folke/tokyonight.nvim extras/fzf
 export FZF_DEFAULT_OPTS='
-  --color=bg+:#414559,bg:#303446,spinner:#f2d5cf,hl:#e78284
-  --color=fg:#c6d0f5,header:#e78284,info:#ca9ee6,pointer:#f2d5cf
-  --color=marker:#f2d5cf,fg+:#c6d0f5,prompt:#ca9ee6,hl+:#e78284
+  --color=bg+:#2e3c64,bg:#1f2335,gutter:#1f2335,border:#29a4bd
+  --color=fg:#c0caf5,hl:#2ac3de,hl+:#2ac3de,query:#c0caf5:regular
+  --color=header:#ff9e64,info:#545c7e,separator:#ff9e64,scrollbar:#29a4bd
+  --color=marker:#ff007c,pointer:#ff007c,prompt:#2ac3de,spinner:#ff007c
 '
 ```
 

@@ -74,52 +74,55 @@
 - `Ctrl+T` → New tab
 - `Ctrl+Enter` → New window
 
-## Zellij Multiplexer
+## herdr Multiplexer
 
-### Mode Switching
-- `Ctrl+P` → Pane mode
-- `Ctrl+T` → Tab mode
-- `Ctrl+N` → Resize mode
-- `Ctrl+S` → Scroll mode
-- `Ctrl+O` → Session mode
-- `Ctrl+Q` → Quit mode
+Prefix is `Ctrl+Space`. Bindings follow tmux: a tmux session is a herdr workspace, a window is a tab, a pane is a pane. Config: `~/.config/herdr/config.toml`.
 
-### In Pane Mode (Ctrl+P)
-- `n` → New pane
-- `d` → Split down
-- `r` → Split right
-- `x` → Close pane
-- `f` → Toggle fullscreen
-- `hjkl` → Navigate panes
-- `Shift+hjkl` → Move pane
-- `p` → Next pane
-- `c` → Rename pane
+### Prefix Commands
+- `Prefix ?` → Help
+- `Prefix d` → Detach
+- `Prefix q` → Reload config
+- `Prefix [` → Copy mode
 
-### In Tab Mode (Ctrl+T)
-- `n` → New tab
-- `x` → Close tab
-- `r` → Rename tab
-- `s` → Sync tab
-- `Tab` → Toggle tab
-- `hjkl` → Navigate tabs
-- `1-9` → Go to tab
+### Panes
+- `Prefix h` / `Alt+Enter` → Split horizontally
+- `Prefix v` / `Alt+Shift+Enter` → Split vertically
+- `Prefix x` / `Alt+Esc` → Close pane
+- `Prefix z` → Zoom pane
+- `Prefix ;` → Last pane
+- `Prefix Shift+O` → Rename pane
+- `Ctrl+Alt+Arrow` → Focus pane (Ghostty's config unbinds these so herdr receives them)
+- `Ctrl+Alt+Shift+Arrow` → Resize pane
+- `Prefix Ctrl+Arrow` → Resize mode
 
-### In Resize Mode (Ctrl+N)
-- `hjkl` → Resize current pane
-- `Shift+hjkl` → Resize more
-- `=` → Equalize panes
-- `+/-` → Increase/decrease
+### Tabs
+- `Prefix c` → New tab
+- `Prefix r` → Rename tab
+- `Prefix k` → Close tab
+- `Prefix 1-9` / `Alt+1-9` → Go to tab
+- `Prefix p` / `Alt+Left` → Previous tab
+- `Prefix n` / `Alt+Right` → Next tab
+- `Alt+Shift+Left/Right` → Move tab
+
+### Workspaces
+- `Prefix Shift+C` → New workspace
+- `Prefix Shift+R` → Rename workspace
+- `Prefix Shift+K` → Close workspace
+- `Prefix Shift+P/N` → Previous/next workspace
 
 ## Shell Navigation (Zsh)
 
 ### History
 - `Ctrl+R` → Fuzzy search history (fzf)
+- `Up/Down` → Search history by the typed prefix
 - `Ctrl+P` → Previous command
 - `Ctrl+N` → Next command
 - `Alt+.` → Insert last argument
 - `!!` → Repeat last command
 
 ### Line Editing
+- `Alt+Left/Right` (`Option` on macOS) → Jump words
+- `Esc Esc` → Prefix the line with `sudo`
 - `Ctrl+A` → Beginning of line
 - `Ctrl+E` → End of line
 - `Ctrl+K` → Kill to end of line
@@ -184,7 +187,7 @@
 
 4. **Session Management**:
    - Save Kitty layout: `Ctrl+Shift+Alt+S`
-   - Use zellij sessions for projects
+   - Use herdr sessions for projects (`hrs <name>`)
    - Configure direnv for auto-environment
 
 5. **Copy/Paste Workflow**:

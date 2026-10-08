@@ -40,15 +40,10 @@
 ## Clipboard Management
 
 ### macOS
-**Maccy**
-- **Shortcut**: `Cmd+Shift+C`
-- **Features**: Search, pin items, ignore apps
-- **Config**: Preferences → set history size
-
-**CopyQ** (Cross-platform alternative)
-- Advanced scripting
-- Tabs for organization
-- Command execution
+**Bolt**
+- **Open**: `Cmd+Space`, then "Clipboard History"
+- **Features**: Search, pin, paste into the previous app, shows the source app
+- **Privacy**: Skips entries password managers mark concealed or transient
 
 ### Linux
 **cliphist** (Wayland)
@@ -56,29 +51,18 @@
 - Persistent history
 - Image support
 
-**CopyQ**
-- Same as macOS version
-- Works on X11 and Wayland
-
 ## App Launchers
 
-### Raycast (macOS)
-**Primary Functions**:
-- App launching: `Cmd+Space`
-- Window management: `Cmd+Opt+Space`
-- Clipboard history: `Cmd+Opt+V`
-- Emoji picker: `Cmd+Opt+E`
-- Calculator: Type math in launcher
-- System commands: Lock, sleep, restart
-- Custom scripts: Bash, Python, Swift
+### Bolt (macOS)
+**Source**: [github.com/salamaashoush/bolt](https://github.com/salamaashoush/bolt), built by `install.sh` into `/Applications/Bolt.app`  
+**Config**: `~/Library/Application Support/Bolt/config.json`
 
-**Extensions**:
-- GitHub
-- Linear
-- Spotify
-- Brew
-- Kill Process
-- Color Picker
+**Primary Functions**:
+- App launching: `Cmd+Space` or `Opt+Space`
+- Action list for a result: `Cmd+K`
+- Global hotkey for any command: `Cmd+Shift+H`
+- Clipboard history, snippets, quicklinks, file search
+- Window management: halves, thirds, maximize, center (needs Accessibility)
 
 ### Rofi (Linux)
 **Config**: `~/.config/rofi/`  
@@ -178,7 +162,6 @@ qalc "integrate(x^2, x)"
 ```
 
 ### GUI/Launcher Integration
-- Raycast: Type math directly
 - Rofi calc: `Alt+Shift+=`
 - KRunner: `Alt+F2` then type math
 
@@ -259,23 +242,8 @@ oha -n 10000 -c 100 https://example.com
 
 ## AI/ML Tools
 
-### Ollama
-**Description**: Run LLMs locally  
-**Usage**:
-```bash
-ollama pull llama2
-ollama run llama2
-```
-
-### LM Studio (macOS)
-**GUI for local LLMs**:
-- Model marketplace
-- Chat interface
-- API server mode
-- Resource monitoring
-
 ### Claude Code
-**Your AI assistant**:
+**Your AI assistant** (installed by mise; the only AI agent this setup installs):
 ```bash
 claude --help
 claude "explain this code"
@@ -314,7 +282,7 @@ pomotroid                  # Start focus timer
 
 # During work
 Cmd+Space → app name       # Quick launch
-Cmd+Opt+V → find snippet   # Clipboard history
+Cmd+Space → clipboard      # Clipboard history
 btop                       # Check resources
 
 # End of day
@@ -323,7 +291,7 @@ topgrade --cleanup         # Clean caches
 ```
 
 ### Automation Ideas
-1. **Raycast scripts** for repetitive tasks
+1. **Bolt hotkeys** (`Cmd+Shift+H`) for repetitive commands
 2. **Keyboard Maestro** (macOS) for complex automation
 3. **KDE Activities** for context switching
 4. **direnv** for project-specific environments

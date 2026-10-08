@@ -1,41 +1,31 @@
 # Development Tools Documentation
 
+Runtimes, build tools, and most developer CLIs come from mise (`configs/mise/config.toml`), so macOS and Linux run the same versions. `mise up` upgrades them.
+
 ## Programming Languages
 
 ### Node.js
 **Description**: JavaScript runtime built on Chrome's V8 engine  
-**Version Management**: fnm (Fast Node Manager)  
+**Version Management**: mise (`node = "lts"`)  
 **Package Managers**: npm, pnpm, yarn, bun
 
-**Tools Installed**:
+**Tools Installed** (mise):
 - **pnpm**: Fast, disk space efficient package manager
 - **yarn**: Alternative package manager with workspaces
 - **bun**: All-in-one JavaScript runtime and package manager
-- **fnm**: Node version manager (`curl -fsSL https://fnm.vercel.app/install | bash`)
 
 ### Python
 **Description**: High-level programming language  
-**Version**: Python 3.12  
-**Package Manager**: pip, pipx, uv, poetry
+**Version Management**: mise (`python = "latest"`, prebuilt python-build-standalone interpreters)  
+**Packages and venvs**: uv (mise)
 
-**Tools Installed**:
-- **uv**: Ultra-fast Python package manager by Astral
-- **pipx**: Install Python apps in isolated environments
-- **poetry**: Dependency management and packaging
-- **ruff**: Fast Python linter and formatter (10-100x faster than existing tools)
-- **black**: The uncompromising code formatter
-
-**Why these tools?**
-- uv: Rust-based, 10-100x faster than pip
-- pipx: Prevents global package conflicts
-- poetry: Better than pip for project dependencies
-- ruff: Replaces flake8, pylint, isort, and more
+**Helpers** (`aliases.sh`): `py` (python3), `pyp` (`uv pip`), `pyvenv` (`uv venv`), `pyactivate`. Python CLI tools install through uv with `mise use -g pipx:<tool>`. Zed formats Python with its built-in ruff language server.
 
 ### Rust
 **Description**: Systems programming language  
-**Installation**: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+**Installation**: mise (`rust`, which drives rustup)
 
-**Tools Installed**:
+**Tools Installed** (mise):
 - **cargo-binstall**: Binary installation for faster setup
 - **sccache**: Shared compilation cache
 - **cargo-watch**: Auto-rebuild on file changes
@@ -45,12 +35,13 @@
 - **cargo-expand**: Show macro expansion results
 - **cargo-nextest**: Faster test runner with better output
 - **bacon**: Background code checker
+- **wasm-pack**: Build Rust-generated WebAssembly packages
 
 **Targets & components**: `wasm32-unknown-unknown` (Leptos, Yew, wasm-pack, Bevy web
 builds), plus `rust-analyzer`, `clippy`, `rustfmt`.
 
-**Tools are installed with `cargo binstall`** where possible — it downloads prebuilt
-binaries instead of compiling each one from source, falling back to `cargo install`.
+**Cargo subcommands come from mise's cargo backend**, which fetches prebuilt binaries
+through cargo-binstall instead of compiling each one from source.
 
 #### mold linker
 
@@ -70,48 +61,30 @@ already present it prints the snippet and leaves the file alone — a global car
 config affects every project on the machine, so clobbering it is not something to do
 silently.
 
-### Go
-**Description**: Statically typed, compiled language by Google  
-**Tools Installed**:
-- **gopls**: Official Go language server
-- **delve**: Debugger for Go
-- **goimports**: Updates imports and formats code
-- **golangci-lint**: Fast linters runner
-- **air**: Live reload for Go apps
-
 ### C/C++
 **Description**: Systems programming languages  
-**Compilers**: GCC, Clang/LLVM
+**Compilers**: Clang from the Xcode Command Line Tools (macOS); GCC and Clang (Arch)
 
 **Tools Installed**:
-- **cmake**: Cross-platform build system
-- **ninja**: Small, fast build system
-- **llvm**: Complete compiler infrastructure
-- **ccache**: Compiler cache for faster rebuilds
-- **clang-format**: Code formatter
-- **clang-tidy**: Linter and static analyzer
-- **gdb**: GNU debugger
-- **valgrind**: Memory debugging (Linux)
-- **just**: Modern command runner (make alternative)
+- **cmake**: Cross-platform build system (mise)
+- **ninja**: Small, fast build system (mise)
+- **just**: Modern command runner, make alternative (mise)
+- **mold**, **lld**: Fast linkers (Arch)
+- **gdb**, **lldb**: Debuggers (Arch, with the game development tools)
 
 ## Code Editors
 
-### VS Code
-**Description**: Microsoft's extensible code editor  
-**Command**: `code`  
-**Extensions**: Managed separately (see configs/vscode/)
-
-**Key Features**:
-- IntelliSense code completion
-- Integrated debugging
-- Git integration
-- Extension ecosystem
-- Remote development
-
 ### Zed
-**Description**: High-performance, multiplayer code editor  
-**Built in**: Rust for maximum performance  
-**Command**: `zed`
+**Description**: High-performance code editor built in Rust  
+**Command**: `zed` (Arch ships the CLI as `zeditor`; `install.sh` links `~/.local/bin/zed` to it)  
+**Config**: `configs/zed/settings.json`, `configs/zed/keymap.json`
+
+**Setup**:
+- Tokyo Night Storm theme and Catppuccin Macchiato icons, from extensions Zed installs on first launch
+- VS Code base keymap plus the bindings in `keymap.json` ([Editor Shortcuts](../shortcuts/editors.md))
+- Edit predictions from Zed's own provider
+- Format on save; Python through Zed's built-in ruff language server
+- direnv loaded through the shell hook
 
 **Why Zed?**
 - GPU-accelerated rendering
@@ -120,26 +93,16 @@ silently.
 - Real-time collaboration
 - Minimal resource usage
 
-### Cursor
-**Description**: AI-powered code editor (VS Code fork)  
-**Command**: `cursor`
-
-**AI Features**:
-- Code generation
-- Natural language edits
-- Context-aware suggestions
-- Chat interface
-
 ### Neovim
 **Description**: Hyperextensible Vim-based editor  
-**Command**: `nvim`  
-**Config**: `~/.config/nvim/`
+**Command**: `nvim` (mise)  
+**Config**: `~/.config/nvim/` (LazyVim starter, extras from `configs/lazyvim.json`)
 
 **Why Neovim?**
 - Terminal-based (works over SSH)
 - Extensive plugin ecosystem
 - LSP support
-- Lua configuration
+- Claude Code in the editor through LazyVim's `ai.claudecode` extra
 
 ## Version Control
 
@@ -153,7 +116,7 @@ silently.
 **git-delta**
 - **Description**: Syntax-highlighting pager for git
 - **Usage**: Automatic (configured in gitconfig)
-- **Features**: Side-by-side diffs, line numbers, syntax highlighting
+- **Features**: Side-by-side diffs, line numbers, syntax highlighting, file links that open in Zed (`zed://file`)
 
 **lazygit**
 - **Description**: Terminal UI for git commands
@@ -172,48 +135,29 @@ gh pr review
 
 ## Database Tools
 
-### PostgreSQL
-**Version**: 17  
-**Client**: psql  
-**macOS**: Links as default version
+No database server is installed. `db-start` (from `aliases.sh`) runs one in Docker:
 
-### Redis
-**Description**: In-memory data structure store  
-**Usage**: Cache, message broker, queues
+```bash
+db-start postgres      # PostgreSQL 16 on 5432
+db-start redis         # Redis on 6379
+db-start mysql         # MySQL 8 on 3306
+db-shell postgres      # psql, redis-cli, or mysql inside the container
+db-stop postgres       # stop and remove it
+```
 
-### SQLite
-**Description**: Embedded SQL database  
-**Usage**: Local development, testing
-
-### DBeaver Community
-**Description**: Universal database GUI  
-**Supports**: PostgreSQL, MySQL, SQLite, MongoDB, and more
-
-## Container & Orchestration
+## Containers
 
 ### Docker
 **Description**: Container platform  
-**GUI**: Docker Desktop
-
-### macOS Specific
-- **Colima**: Lightweight container runtime
-- **OrbStack**: Fast Docker & Linux VMs
-
-### Kubernetes Tools
-- **kubectl**: Kubernetes CLI
-- **helm**: Package manager for Kubernetes
-- **k9s**: Terminal UI for Kubernetes
+**macOS**: Docker CLI with the compose and buildx plugins, running on Colima ([Colima Optimizations](./colima-optimizations.md))  
+**Linux**: Docker Engine with compose and buildx  
+**TUI**: lazydocker (mise)
 
 ## API Development
 
 ### HTTP Clients
-- **httpie**: User-friendly command-line HTTP client
-- **xh**: Faster httpie alternative in Rust
+- **xh**: Command-line HTTP client with httpie's request syntax, in Rust
 - **insomnia**: GUI API client
-
-### gRPC Tools
-- **grpcurl**: Command-line gRPC client
-- **grpcui**: Web UI for gRPC
 
 ## Development Utilities
 
@@ -224,51 +168,23 @@ gh pr review
 
 ### Performance Analysis
 - **hyperfine**: Command-line benchmarking
-- **oha**: HTTP load testing
-- **flamegraph**: Stack trace visualizer
-- **py-spy**: Python profiler
 
 ### Code Quality
 - **tokei**: Count lines of code
 - **sccache**: Shared compilation cache
 
 ### Documentation
-- **tldr**: Simplified man pages
-- **dash** (macOS): API documentation browser
-- **zeal** (Linux): Offline documentation browser
+- **tldr**: Simplified man pages (the tlrc client)
 
 ## Language Servers (LSP)
 
-Installed automatically:
-- **gopls**: Go
-- **rust-analyzer**: Rust
-- **pylsp**: Python
-- **typescript-language-server**: TypeScript/JavaScript
-- **clangd**: C/C++
+- **rust-analyzer**: Installed with Rust by mise
+- **Zed** downloads the language servers it needs on first use
+- **LazyVim** installs servers for its enabled language extras through Mason
 
-## Package Registries & Tools
+## Global Tools
 
-### Node.js Global Packages
-```bash
-npm install -g @anthropic-ai/claude-code  # Claude AI assistant
-npm install -g typescript                 # TypeScript compiler
-npm install -g prettier                   # Code formatter
-npm install -g eslint                     # JavaScript linter
-```
-
-### Python Global Tools (via pipx)
-```bash
-pipx install black          # Code formatter
-pipx install mypy          # Static type checker
-pipx install pre-commit    # Git hook framework
-```
-
-### Rust Global Tools (via cargo)
-```bash
-cargo install --locked bacon      # Background compiler
-cargo install --locked tokei      # Code statistics
-cargo install --locked bat        # Better cat
-```
+Global tools come from mise rather than `npm -g`, `pip install`, or `cargo install` (Python CLIs: `mise use -g pipx:<tool>`, installed through uv). `mise use -g <tool>` writes to `~/.config/mise/config.toml`, separate from the managed `conf.d/dev-setup.toml`, so it survives a re-run of `install.sh`.
 
 ## Development Workflow Integration
 
@@ -279,18 +195,11 @@ cargo install --locked bat        # Better cat
 
 ### CI/CD Tools
 - **GitHub Actions**: Via gh CLI
-- **ansible**: Automation and configuration
-- **terraform**: Infrastructure as code
-
-### Cloud CLIs
-- **aws-cli**: AWS services
-- **azure-cli**: Azure services
-- **gcloud**: Google Cloud Platform
 
 ## Best Practices
 
-1. **Use version managers**: fnm for Node, rustup for Rust
-2. **Isolate dependencies**: pipx for Python tools, project virtual environments
-3. **Cache builds**: ccache for C/C++, sccache for Rust
+1. **Use version managers**: mise for runtimes and CLI tools
+2. **Isolate dependencies**: project virtual environments, per-project `mise.toml`
+3. **Cache builds**: sccache for Rust
 4. **Format consistently**: Configure formatters in each project
 5. **Lint early**: Pre-commit hooks catch issues before commit

@@ -20,7 +20,7 @@ gp                # Push
 
 ### Development
 ```bash
-code .            # Open VS Code
+zed .             # Open Zed
 pnpm dev          # Start dev server
 docker-compose up # Start containers
 topgrade          # Update everything
@@ -31,10 +31,10 @@ topgrade          # Update everything
 ### macOS
 | Action | Shortcut |
 |--------|----------|
-| App Launcher | `Cmd+Space` |
+| App Launcher (Bolt) | `Cmd+Space` or `Opt+Space` |
 | Terminal | `Cmd+Opt+T` |
-| VS Code | `Cmd+Opt+C` |
-| Clipboard History | `Cmd+Opt+V` |
+| Zed | `Cmd+Opt+C` |
+| Clipboard History | `Cmd+Space`, then "Clipboard History" |
 | Window Left/Right | `Ctrl+Opt+←→` |
 
 ### Linux (KDE)
@@ -42,7 +42,7 @@ topgrade          # Update everything
 |--------|----------|
 | App Launcher | `Alt+Space` |
 | Terminal | `Ctrl+Alt+T` |
-| VS Code | `Ctrl+Alt+C` |
+| Zed | `Ctrl+Alt+C` |
 | Clipboard History | `Alt+Shift+C` |
 | Window Left/Right | `Meta+←→` |
 
@@ -54,13 +54,13 @@ topgrade          # Update everything
 | Navigate Panes | `Ctrl+Shift+Arrow` |
 | Zoom Toggle | `Ctrl+Shift+Z` |
 
-### Editor (VS Code)
+### Editor (Zed)
 | Action | Shortcut |
 |--------|----------|
 | Command Palette | `Cmd/Ctrl+Shift+P` |
 | Quick Open | `Cmd/Ctrl+P` |
-| Multi-cursor | `Cmd/Ctrl+D` |
-| Terminal Toggle | `Cmd/Ctrl+J` |
+| Select Next Occurrence | `Cmd/Ctrl+D` |
+| Toggle Bottom Dock | `Cmd/Ctrl+J` |
 
 ## 📦 Key Tools Installed
 
@@ -68,7 +68,7 @@ topgrade          # Update everything
 - **kitty** - GPU-accelerated terminal
 - **zsh + zinit** - Fast shell with plugins
 - **starship** - Cross-platform prompt
-- **zellij** - Modern multiplexer
+- **herdr** - Agent multiplexer (prefix `Ctrl+Space`, `cheat herdr` for bindings)
 
 ### CLI Essentials
 - **eza** - Better ls
@@ -79,16 +79,14 @@ topgrade          # Update everything
 - **zoxide** - Smart cd
 
 ### Development
-- **VS Code** - Primary editor
-- **Zed** - Fast alternative
-- **Neovim** - Terminal editor
+- **Zed** - Primary editor
+- **Neovim + LazyVim** - Terminal editor
 - **lazygit** - Git UI
 - **docker** - Containers
-- **fnm** - Node manager
-- **uv** - Python package manager
+- **mise** - Runtimes, CLI tools, and Claude Code (`mise up` to upgrade)
 
 ### Productivity
-- **Raycast/Rofi** - Launcher
+- **Bolt/Rofi** - Launcher
 - **Rectangle** - Window management
 - **btop** - System monitor
 - **topgrade** - Universal updater
@@ -103,14 +101,14 @@ git init
 # Node.js
 pnpm init && pnpm add -D typescript
 
-# Python  
-uv venv && source .venv/bin/activate
+# Python
+pyvenv && pyactivate   # uv venv, then activate .venv
 
 # Rust
 cargo init
 
 # Then
-code .  # Open in editor
+zed .  # Open in editor
 ```
 
 ### Quick File Search
@@ -122,7 +120,7 @@ fd component.tsx
 rg "function.*export"
 
 # Interactive search
-fd -e js | fzf | xargs code
+fd -e js | fzf | xargs zed
 ```
 
 ### System Maintenance
@@ -159,8 +157,10 @@ sudo scx_lavd              # Latency-tuned scheduler for gaming
 - Shell: `~/.zshrc`
 - Kitty: `~/.config/kitty/kitty.conf`
 - Git: `~/.gitconfig`
-- VS Code: `~/.config/Code/User/settings.json`
+- Zed: `~/.config/zed/settings.json`
 - Starship: `~/.config/starship.toml`
+- herdr: `~/.config/herdr/config.toml`
+- mise: `~/.config/mise/conf.d/dev-setup.toml`
 
 ## 💡 Pro Tips
 

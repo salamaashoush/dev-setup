@@ -2,38 +2,35 @@
 
 ## Overview
 
-The shell environment uses Zsh with Zinit for plugin management, optimized for sub-100ms startup times while providing powerful features.
+The shell environment uses Zsh with Zinit for plugin management. Tool init scripts are cached and plugins load after the first prompt, so startup stays fast: zsh-bench in an Arch container measured 37 ms to first prompt (was 49 ms), 26 ms to exit (was 36 ms), and 17.5 ms of lag per command. These are container measurements, not Mac numbers.
 
 ## Configuration Files
 
 ### ~/.zshrc
-Main configuration file with modular sections:
+Main configuration file (`configs/zshrc`), in order:
 
-1. **Zinit Installation**: Auto-installs if missing
-2. **Performance Optimizations**: Lazy loading, compilation
-3. **Environment Variables**: Cross-platform paths
-4. **PATH Configuration**: Deduplication, platform-specific
-5. **Plugin Loading**: Conditional, performance-focused
-6. **Aliases & Functions**: Productivity shortcuts
-7. **Tool Initialization**: Language-specific setups
+1. **Cached Tool Init**: `_cached_source`, which sources tool init scripts from `~/.cache/zsh`
+2. **Zinit Installation**: Auto-installs if missing
+3. **Environment Variables**: Editors, pager, development paths
+4. **PATH Configuration**: Homebrew shellenv, then mise and user paths, deduplicated
+5. **Plugin Loading**: Turbo mode, after the first prompt
+6. **History, Options, Key Bindings, Completion**
+7. **Aliases & Functions**: `~/.config/shell/aliases.sh`, then shell functions
+8. **Tool Initialization**: mise, starship, zoxide, direnv, fzf, vivid
+9. **Local Overrides**: `~/.zshrc.local`, kept out of version control
+
+### ~/.config/shell/aliases.sh
+Every alias and most functions (`configs/aliases.sh`), including all git and docker shortcuts. It does not override `ls`, `cat`, `grep`, `find`, `du` or `df`, so scripts see the standard commands.
 
 ## Key Features
 
-### Performance Optimizations
+### Cached Tool Init
+
+brew, mise, starship, zoxide, direnv, fzf and vivid each print a static init script. Spawning all of them on every start costs more than the rest of startup combined, so `.zshrc` sources a cached copy from `~/.cache/zsh`. The cache is keyed on each binary's path, inode, size and mtime, so upgrading a tool rebuilds its script automatically.
 
 ```bash
-# Compile zcompdump for faster loading
-zcompile ~/.zcompdump
-
-# Lazy load nvm equivalent
-zinit light-mode for \
-    OMZL::nvm.zsh \
-    as"completion" OMZP::nvm
-
-# Turbo mode for deferred loading
-zinit wait lucid for \
-    OMZP::git \
-    OMZP::docker
+# Force a rebuild of every cached init script
+rm -rf ~/.cache/zsh
 ```
 
 ### Smart PATH Management
@@ -42,43 +39,50 @@ zinit wait lucid for \
 # Automatic deduplication
 typeset -U path PATH
 
-# Platform-aware additions
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    path=("/opt/homebrew/bin" $path)
-else
-    path=("/usr/local/bin" $path)
-fi
+# macOS: brew shellenv (cached), from /opt/homebrew on Apple Silicon or
+# /usr/local on Intel. Loaded first so mise and user paths win over brew.
+path=(
+    "$HOME/.local/share/mise/shims"
+    "$HOME/.local/bin"
+    "$CARGO_HOME/bin"
+    "$BUN_INSTALL/bin"
+    "$PNPM_HOME"
+    $path
+)
 ```
 
 ### FZF Integration
 
-Enhanced fuzzy finding with Tokyo Night theme:
+Tokyo Night Storm colors from folke/tokyonight.nvim:
 
 ```bash
-export FZF_DEFAULT_OPTS='
-  --height=50%
+export FZF_DEFAULT_OPTS="
+  --height 50%
   --layout=reverse
   --border=rounded
-  --preview-window=right:50%:wrap
-  --color=bg+:#414559,bg:#303446,spinner:#f2d5cf
-'
+  --color=bg+:#2e3c64,bg:#1f2335,gutter:#1f2335,border:#29a4bd
+  --color=fg:#c0caf5,hl:#2ac3de,hl+:#2ac3de,query:#c0caf5:regular
+  --color=header:#ff9e64,info:#545c7e,separator:#ff9e64,scrollbar:#29a4bd
+  --color=marker:#ff007c,pointer:#ff007c,prompt:#2ac3de,spinner:#ff007c
+"
 
 # Use fd for faster file finding
-export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
 ```
+
+`Ctrl+T` previews files with bat, `Alt+C` previews directories with eza, and `Ctrl+Y` inside `Ctrl+R` copies the selected command.
 
 ### Directory Navigation
 
 ```bash
-# Zoxide configuration
-eval "$(zoxide init zsh)"
+# Zoxide: z to jump, zi for interactive; cd is untouched
+z project
+zi project
 
-# Better cd with automatic ls
-cd() {
-    builtin cd "$@" && eza -la
-}
+# fcd: pick from zoxide's directory list (fd when zoxide is missing)
+fcd
 
 # Quick navigation aliases
 alias ..='cd ..'
@@ -88,15 +92,15 @@ alias ....='cd ../../..'
 
 ## Essential Aliases
 
+`aliases.sh` is the single source for aliases. Run `cheat` for the full list.
+
 ### File Operations
 ```bash
-alias ls='eza'
-alias l='eza -la'
-alias ll='eza -l'
-alias lt='eza --tree'
-alias cat='bat'
-alias grep='rg'
-alias find='fd'
+alias ll='eza -l --icons --git --header --group-directories-first'
+alias la='eza -la --icons --git --header --group-directories-first'
+alias lt='eza --tree --icons --git --level=2 --group-directories-first'
+alias b='bat --style=auto --paging=never'
+alias bcat='bat --style=plain --paging=never'
 ```
 
 ### Git Shortcuts
@@ -106,116 +110,111 @@ alias gs='git status'
 alias gd='git diff'
 alias gds='git diff --staged'
 alias gc='git commit'
+alias gca='git commit --amend'
 alias gp='git push'
-alias gl='git pull'
+alias gpl='git pull'
+alias gl='git log --oneline --graph --decorate -20'
+alias gst='git stash'
 alias lg='lazygit'
+```
+
+Oh My Zsh's git plugin is not loaded, and several of these differ from it: `gst` is `git stash` (OMZ: `git status`) and `gl` is the log graph (OMZ: `git pull`).
+
+### Docker
+```bash
+alias d='docker'
+alias dc='docker compose'
+alias dcu='docker compose up -d'
+alias dcd='docker compose down'
+alias dps='docker ps'
+alias dex='docker exec -it'
 ```
 
 ### Development
 ```bash
-alias v='nvim'
-alias vi='nvim'
-alias vim='nvim'
-alias c='code'
-alias z='zed'
-alias cur='cursor'
+alias yolo='claude --dangerously-skip-permissions'
+alias hr='herdr'
+alias pyvenv='uv venv'
+y             # yazi; cd to its directory on quit
+hrs <name>    # herdr session, attach or create
 ```
 
 ### System
 ```bash
-alias reload='source ~/.zshrc'
-alias update='topgrade'
-alias ports='netstat -tulanp'
-alias myip='curl -s https://api.ipify.org'
+reload        # exec zsh (re-sourcing ~/.zshrc stacks hooks)
+myip          # public IP
+killport 3000 # kill whatever listens on a port
+fkill         # pick processes with fzf and send SIGTERM (fkill 9 for SIGKILL)
+copy          # pbcopy, wl-copy, or xclip
 ```
+
+There is no `paste` alias: it shadowed the system `paste` utility. Use `pbpaste` (macOS) or `wl-paste` (Wayland).
 
 ## Zinit Plugins
 
-### Syntax & Completion
+Loaded in turbo mode, after the first prompt:
+
 ```bash
-# Syntax highlighting
-zinit light zsh-users/zsh-syntax-highlighting
+zinit wait lucid light-mode for \
+    atinit"zicompinit; zicdreplay" \
+        zdharma-continuum/fast-syntax-highlighting \
+    atload"_zsh_autosuggest_start" \
+        zsh-users/zsh-autosuggestions \
+    blockf atpull'zinit creinstall -q .' \
+        zsh-users/zsh-completions \
+    OMZP::sudo
 
-# Auto-suggestions based on history
-zinit light zsh-users/zsh-autosuggestions
-
-# Additional completions
-zinit light zsh-users/zsh-completions
+zinit snippet OMZP::command-not-found
 ```
 
-### History Enhancement
-```bash
-# Better history search
-zinit light zsh-users/zsh-history-substring-search
+- **fast-syntax-highlighting**: Command highlighting
+- **zsh-autosuggestions**: History suggestions, fetched asynchronously and skipped for buffers over 40 characters
+- **zsh-completions**: Additional completions
+- **OMZ sudo**: Press `Esc` twice to put `sudo` in front of the line
+- **OMZ command-not-found**: Suggests the package that provides a missing command
 
-# History configuration
+Oh My Zsh's git, docker and kubectl plugins and the zinit annexes are not loaded.
+
+## History & Key Bindings
+
+```bash
 HISTSIZE=50000
 SAVEHIST=50000
 setopt EXTENDED_HISTORY
-setopt HIST_EXPIRE_DUPS_FIRST
-setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_IGNORE_SPACE
 setopt HIST_VERIFY
 setopt SHARE_HISTORY
 ```
 
-### Productivity Plugins
-```bash
-# Extract any archive
-zinit light OMZP::extract
-
-# Colored man pages
-zinit light OMZP::colored-man-pages
-
-# Git plugin (aliases and functions)
-zinit wait lucid for OMZP::git
-```
+- `Up` / `Down` → Search history for lines starting with what is already typed
+- `Alt+Left/Right` (`Option` on macOS), `Ctrl+Left/Right` → Jump words
+- `Ctrl+R` → Fuzzy history search (fzf)
+- `Ctrl+G` → lazygit
+- `Esc Esc` → Prefix the line with `sudo`
 
 ## Language-Specific Setup
 
-### Node.js (fnm)
+### mise
 ```bash
-# Fast Node Manager
-if command -v fnm &>/dev/null; then
-    eval "$(fnm env --use-on-cd)"
-fi
+# Activated first in the tool init block, so the tools initialised after it
+# resolve to real binaries rather than shims
+_cached_source mise-activate mise mise activate zsh
 ```
 
-### Python
-```bash
-# UV (Astral) 
-export UV_SYSTEM_PYTHON=1
-
-# Poetry
-export POETRY_VIRTUALENVS_IN_PROJECT=true
-
-# Pyenv (if used)
-if command -v pyenv &>/dev/null; then
-    eval "$(pyenv init -)"
-fi
-```
+Node.js, Bun, Rust and the rest come from `~/.config/mise/conf.d/dev-setup.toml`.
 
 ### Rust
 ```bash
-# Cargo binaries
-export PATH="$HOME/.cargo/bin:$PATH"
-
-# Sccache for faster builds
-export RUSTC_WRAPPER="sccache"
-```
-
-### Go
-```bash
-export GOPATH="$HOME/go"
-export PATH="$GOPATH/bin:$PATH"
+export CARGO_HOME="$HOME/.cargo"
+export RUSTUP_HOME="$HOME/.rustup"
 ```
 
 ## Starship Prompt
 
-Configured in `~/.config/starship.toml`:
+Configured in `~/.config/starship.toml` (from `configs/starship.toml`). Two lines: the directory, git branch, git status with counts, language versions, command duration over 2 seconds, background jobs, and battery under 20%, then a `❯` on the second line (red after a failed command). Over SSH the host leads the first line. There is no right prompt; `.zshrc` unsets `RPROMPT` so Starship is not run twice per prompt.
 
 ```toml
-# Tokyo Night Storm theme
 format = """
 $username\
 $hostname\
@@ -223,28 +222,26 @@ $directory\
 $git_branch\
 $git_state\
 $git_status\
-$cmd_duration\
-$line_break\
-$python\
-$rust\
-$golang\
 $nodejs\
+$bun\
+$rust\
+$python\
+$golang\
+$docker_context\
+$aws\
+$kubernetes\
+$cmd_duration\
+$jobs\
+$battery\
+$line_break\
 $character"""
 
-[directory]
-style = "blue bold"
-truncation_length = 3
-truncate_to_repo = true
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
 
-[git_branch]
-style = "purple bold"
-symbol = " "
-
-[git_status]
-style = "red bold"
-ahead = "⇡${count}"
-behind = "⇣${count}"
-diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+[cmd_duration]
+min_time = 2000
 ```
 
 ## Environment Variables
@@ -252,50 +249,39 @@ diverged = "⇕⇡${ahead_count}⇣${behind_count}"
 ### Development
 ```bash
 export EDITOR="nvim"
-export VISUAL="nvim"
+export VISUAL="$EDITOR"
+export SUDO_EDITOR="$EDITOR"
 export PAGER="less"
-export LESS="-R"
-export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+export LESS="-R --mouse"
+export MANPAGER="sh -c 'col -bx | bat -l man -p'"  # set in aliases.sh when bat is installed
 ```
 
-### Security
+### SSH
 ```bash
-# GPG
-export GPG_TTY=$(tty)
-
-# SSH
-export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+# Linux: set in ~/.config/environment.d/wayland.conf for the ssh-agent user service
+SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"
 ```
 
-### Tool-Specific
-```bash
-# Homebrew (macOS)
-export HOMEBREW_NO_ANALYTICS=1
-export HOMEBREW_NO_AUTO_UPDATE=1
-
-# Docker
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
-```
+On macOS the agent is the system one, with the key passphrase in the Keychain (`UseKeychain` in `~/.ssh/config`).
 
 ## Troubleshooting
 
 ### Slow Startup
-1. Check with: `zsh -xvs`
-2. Profile with: `time zsh -i -c exit`
-3. Disable plugins one by one
-4. Ensure zcompdump is compiled
+1. Measure with: `time zsh -i -c exit`
+2. Profile with: `zsh -xvs`
+3. Rebuild cached init scripts: `rm -rf ~/.cache/zsh`
+4. Disable plugins one by one
 
 ### Command Not Found
 1. Check PATH: `echo $PATH | tr ':' '\n'`
-2. Verify installation: `which <command>`
+2. Verify installation: `which <command>`, or `mise ls` for tools from mise
 3. Reload shell: `exec zsh`
 4. Check platform-specific paths
 
 ### Plugin Issues
 1. Update Zinit: `zinit self-update`
 2. Update plugins: `zinit update --all`
-3. Clear cache: `rm -rf ~/.zinit/completions/*`
+3. Clear cache: `rm -rf ~/.local/share/zinit/completions/*`
 4. Recompile: `zinit compile --all`
 
 ## Best Practices

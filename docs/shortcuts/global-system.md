@@ -3,23 +3,18 @@
 ## macOS System Shortcuts
 
 ### Application Launching
-- `Cmd+Space` → Raycast (Primary launcher)
+- `Cmd+Space` → Bolt (Primary launcher)
 - `Cmd+Opt+T` → Open Kitty Terminal
-- `Cmd+Opt+C` → Open VS Code
+- `Cmd+Opt+C` → Open Zed
 - `Cmd+Opt+F` → Open Finder
 - `Cmd+Opt+B` → Open Chrome Browser
-- `Cmd+Opt+Z` → Open Zed Editor
 
-### Raycast Shortcuts
-- `Cmd+Space` → Search/Launch apps
-- `Cmd+Opt+Space` → Window Management
-- `Cmd+Opt+V` → Clipboard History
-- `Cmd+Opt+E` → Emoji Picker
-- `Cmd+Opt+/` → Search Raycast Commands
-- `Cmd+Opt+G` → GitHub Search
-- `Cmd+Opt+D` → Dictionary
-- `Cmd+Opt+N` → Create Quick Note
-- `Cmd+K` → Quick switcher (in apps)
+### Bolt Shortcuts
+- `Cmd+Space` / `Opt+Space` → Show or hide Bolt
+- `Cmd+K` → Action list for the selected result
+- `Cmd+Shift+H` → Record a global hotkey for the selected command
+- `Cmd+,` → Settings (`~/Library/Application Support/Bolt/config.json`)
+- Clipboard history, window management, snippets, quicklinks, and file search are commands inside Bolt
 
 ### Mission Control & Spaces
 - `Ctrl+Up` → Mission Control
@@ -29,7 +24,7 @@
 - `Ctrl+1-9` → Switch to Space 1-9
 - `F11` → Show Desktop
 
-### Window Management (Rectangle/Raycast)
+### Window Management (Rectangle)
 - `Ctrl+Opt+Left` → Left half
 - `Ctrl+Opt+Right` → Right half
 - `Ctrl+Opt+Enter` → Maximize
@@ -62,8 +57,7 @@
 
 ### Application Launching
 - `Ctrl+Alt+T` → Kitty Terminal
-- `Ctrl+Alt+C` → VS Code
-- `Ctrl+Alt+Z` → Zed Editor
+- `Ctrl+Alt+C` → Zed
 - `Ctrl+Alt+F` → Dolphin File Manager
 - `Ctrl+Alt+B` → Chrome Browser
 - `Ctrl+Alt+S` → Slack
@@ -145,7 +139,7 @@
 ```
 Launchers:        Window Mgmt:           System:
 Cmd+Space         Ctrl+Opt+←→           Cmd+Shift+3/4/5
-Cmd+Opt+V         Ctrl+Opt+Enter        Cmd+Ctrl+Q
+Opt+Space         Ctrl+Opt+Enter        Cmd+Ctrl+Q
 Cmd+K             Ctrl+Opt+↑↓           Cmd+Tab
 ```
 
@@ -160,7 +154,8 @@ Alt+F2            Alt+Tab               Ctrl+Alt+Esc
 ## Customization Notes
 
 ### macOS
-- Raycast shortcuts are configured in Raycast Preferences
+- Bolt hotkeys are set in Bolt Settings (`Cmd+,`); `install.sh` turns off Spotlight's `Cmd+Space` so Bolt can take it
+- Bolt's window management needs Accessibility: System Settings > Privacy & Security > Accessibility
 - Rectangle shortcuts can be customized in Rectangle Preferences
 - System shortcuts modified via System Preferences → Keyboard → Shortcuts
 

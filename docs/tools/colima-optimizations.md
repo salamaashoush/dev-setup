@@ -41,12 +41,13 @@ This document explains the performance optimizations applied to Colima for optim
 ### 8. Rosetta Support
 - **Setting**: `rosetta: true`
 - **Benefit**: Better x86_64 emulation on Apple Silicon
+- **Requirement**: Rosetta 2, which `install.sh` installs on Apple Silicon
 
 ## Applying Configuration
 
 The optimized configuration is automatically applied when running:
 ```bash
-./setup-all.sh
+./install.sh
 ```
 
 To manually apply:
@@ -90,6 +91,10 @@ docker info
 ### File watching not working
 - Disable mountInotify if causing issues
 - Use polling-based watchers in your development tools
+
+### `docker compose` or `docker buildx` not found
+- Homebrew installs both as CLI plugins outside Docker's default search path
+- `install.sh` adds `$(brew --prefix)/lib/docker/cli-plugins` to `cliPluginsExtraDirs` in `~/.docker/config.json`; add it by hand if that file was replaced since
 
 ## Additional Tips
 

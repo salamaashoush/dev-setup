@@ -2,9 +2,22 @@
 
 ## Terminal Emulators
 
+### Ghostty
+**Description**: Native, GPU-accelerated terminal emulator  
+**Category**: Terminal (primary)  
+**Installed**: Both platforms  
+**Configuration**: `configs/ghostty.conf` (installed to `~/.config/ghostty/config`)
+
+**Key Settings**:
+- Tokyo Night Storm, with the bright colors from folke/tokyonight.nvim
+- `clipboard-read = ask`: programs in the terminal, including over SSH, must ask before reading the clipboard
+- Shell integration adds `ssh-env` and `ssh-terminfo`, so remote hosts get Ghostty's terminfo or fall back to `xterm-256color`
+- Tabs in the titlebar on macOS
+- `Ctrl+Alt+Arrow` unbound so herdr can use it for pane focus
+
 ### Kitty
 **Description**: GPU-accelerated terminal emulator with extensive customization  
-**Category**: Terminal  
+**Category**: Terminal (fallback)  
 **Installed**: Both platforms  
 **Configuration**: `configs/kitty.conf`
 
@@ -32,23 +45,26 @@
 **Configuration**: `configs/zshrc`
 
 **Enhancements**:
-- Zinit plugin manager for fast startup
-- Syntax highlighting
-- Auto-suggestions
-- History substring search
+- Zinit plugin manager, plugins loaded after the first prompt
+- Tool init scripts cached in `~/.cache/zsh` and rebuilt when a binary changes (`rm -rf ~/.cache/zsh` forces it)
+- Syntax highlighting and auto-suggestions
+- `Up`/`Down` search history by the typed prefix; `Alt`/`Option+Left/Right` jump words
+- OMZ `sudo` (`Esc Esc`) and `command-not-found`; no OMZ git, docker or kubectl plugins, whose aliases clash with `aliases.sh`
 - Directory jumping with zoxide
+- 37 ms to first prompt (zsh-bench, Arch container)
+
+See [Shell Configuration](../configurations/shell.md).
 
 ### Starship
 **Description**: Cross-platform prompt with contextual information  
 **Configuration**: `configs/starship.toml`  
-**Install**: `curl -sS https://starship.rs/install.sh | sh`
+**Install**: mise (`configs/mise/config.toml`)
 
 **Features**:
-- Git status integration
-- Language version display
-- Command duration
-- Custom modules
-- Tokyo Night colors
+- Two lines: directory, git branch, git status with counts, language versions, duration over 2 seconds, background jobs, battery under 20%
+- `❯` on the second line, red after a failed command
+- No right prompt
+- Tokyo Night Storm palette
 
 ## Essential CLI Tools
 
@@ -122,7 +138,7 @@ fd -E node_modules     # Exclude paths
 ### fzf
 **Description**: Command-line fuzzy finder  
 **Essential**: Yes  
-**Configuration**: Set in zshrc with Tokyo Night colors
+**Configuration**: Set in zshrc with folke's Tokyo Night Storm colors
 
 **Key Bindings**:
 - `Ctrl+R` → Fuzzy search command history
@@ -165,22 +181,23 @@ zq proj       # Query database
 
 ## Terminal Multiplexers
 
-### Zellij
-**Description**: Modern terminal multiplexer  
-**Category**: Multiplexer
+### herdr
+**Description**: An agent multiplexer that lives in your terminal ([herdr.dev](https://herdr.dev))  
+**Category**: Multiplexer  
+**Configuration**: `configs/herdr/config.toml` (installed to `~/.config/herdr/config.toml`)  
+**Install**: `mise use -g herdr`, skipped when a herdr is already on `PATH` (Omarchy ships it as a system package)
 
 **Advantages over tmux**:
-- Intuitive default keybindings
-- Floating panes
-- Better mouse support
-- Built-in layouts
-- WebAssembly plugin system
+- Keeps tmux bindings: session → workspace, window → tab, pane → pane
+- Labels the coding agent running in each pane
+- Resumes Claude Code sessions after a server restart (`install.sh` runs `herdr integration install claude`)
+- Named persistent sessions: `hrs <name>`, `hrl`, `hra`, `hrk`
 
-**Key Bindings**:
-- `Ctrl+P` → Pane mode
-- `Ctrl+T` → Tab mode  
-- `Ctrl+N` → Resize mode
-- `Ctrl+S` → Scroll mode
+**Key Bindings** (prefix `Ctrl+Space`):
+- `Alt+Enter` → Split horizontally
+- `Ctrl+Alt+Arrow` → Focus pane
+- `Prefix c` → New tab
+- `Prefix d` → Detach
 
 ## File Manager
 
@@ -222,6 +239,7 @@ zq proj       # Query database
 
 ### tldr
 **Description**: Simplified man pages with examples  
+**Install**: tlrc (Rust client) via mise; the command is still `tldr`  
 **Usage**: `tldr <command>`
 
 **Why tldr?**

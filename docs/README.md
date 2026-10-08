@@ -8,53 +8,42 @@ This documentation provides a complete guide to all tools, configurations, and k
 - [Terminal & Shell Tools](./tools/terminal-shell.md)
 - [Development Tools](./tools/development.md)
 - [Productivity Tools](./tools/productivity.md)
-- [System Tools](./tools/system.md)
-- [Network Tools](./tools/network.md)
 - [Gaming Network](./tools/gaming-network.md)
 - [Game Development](./tools/game-development.md)
 - [CachyOS & Hardware Tuning](./tools/cachyos-hardware.md)
-- [Container & Cloud Tools](./tools/containers-cloud.md)
+- [Colima Optimizations](./tools/colima-optimizations.md)
 
 ### ⌨️ [Keyboard Shortcuts](./shortcuts/)
 - [Global System Shortcuts](./shortcuts/global-system.md)
 - [Terminal Shortcuts](./shortcuts/terminal.md)
 - [Editor Shortcuts](./shortcuts/editors.md)
-- [Window Management](./shortcuts/window-management.md)
 - [Application Launchers](./shortcuts/launchers.md)
 - [Development Workflow](./shortcuts/development-workflow.md)
 
 ### ⚙️ [Configurations](./configurations/)
 - [Shell Configuration](./configurations/shell.md)
-- [Terminal Emulators](./configurations/terminals.md)
-- [Git Configuration](./configurations/git.md)
-- [Editor Configurations](./configurations/editors.md)
-- [System Optimizations](./configurations/system.md)
 
 ### 🎯 [Design Rationale](./rationale/)
 - [Tool Selection Philosophy](./rationale/tool-selection.md)
-- [Performance Optimizations](./rationale/performance.md)
-- [Cross-Platform Considerations](./rationale/cross-platform.md)
 - [Theme & UI Consistency](./rationale/theme-consistency.md)
 
 ### 🔧 [Troubleshooting](./troubleshooting/)
 - [Common Issues](./troubleshooting/common-issues.md)
-- [Platform-Specific Problems](./troubleshooting/platform-specific.md)
-- [Performance Tuning](./troubleshooting/performance.md)
 
 ## Quick Reference
 
 ### Most Important Shortcuts
 
 #### macOS
-- `Cmd+Space` → Raycast (App Launcher)
+- `Cmd+Space` / `Opt+Space` → Bolt (App Launcher)
 - `Cmd+Opt+T` → Open Kitty Terminal
-- `Cmd+Opt+C` → Open VS Code
-- `Cmd+Opt+V` → Clipboard History
+- `Cmd+Opt+C` → Open Zed
+- `Cmd+Space`, then "Clipboard History" → Clipboard History
 
 #### Linux (KDE Plasma)
 - `Alt+Space` → Rofi (App Launcher)
 - `Ctrl+Alt+T` → Open Terminal (Kitty)
-- `Ctrl+Alt+C` → Open VS Code
+- `Ctrl+Alt+C` → Open Zed
 - `Alt+Shift+C` → Clipboard History
 
 ### Essential Commands
@@ -89,7 +78,7 @@ git delta     # Enhanced git diffs
 
 1. Review the [Tool Selection Philosophy](./rationale/tool-selection.md)
 2. Check platform-specific [Global System Shortcuts](./shortcuts/global-system.md)
-3. Configure your preferred [Terminal](./configurations/terminals.md)
+3. Configure your [Terminal & Shell](./tools/terminal-shell.md)
 4. Set up your [Development Environment](./tools/development.md)
 
 ## Contributing

@@ -15,11 +15,9 @@ pnpm add -D typescript @types/node tsx vitest
 cp -r ~/.config/project-templates/node/* .
 
 # Python
-uv venv
-source .venv/bin/activate  # or: direnv allow
-uv pip install -e .
-# Create from template
-cp -r ~/.config/project-templates/python/* .
+uv init                    # pyproject.toml, .python-version
+uv add requests            # adds the dependency and syncs .venv
+uv run main.py             # runs inside the project's .venv
 
 # Rust
 cargo init
@@ -93,36 +91,36 @@ air                   # Go with air
 
 ## IDE Integration Workflows
 
-### VS Code
+### Zed
 ```bash
-# Open project
-code .                 # open current directory
-code ~/projects/app    # open specific project
+# Open project (on Arch, zed is a link to zeditor)
+zed .                  # open current directory
+zed ~/Workspace/app    # open specific project
 
 # Quick actions via command line
-code --goto file.ts:10:5    # open at line/column
-code --diff file1 file2     # compare files
-code --add folder          # add folder to workspace
+zed file.ts:10:5           # open at line/column
+zed --diff file1 file2     # compare files
+zed --add folder           # add folder to the open workspace
 ```
 
 **Common sequences:**
 1. `Cmd+P` → type filename → `Enter` (open file)
 2. `Cmd+Shift+P` → "format" → `Enter` (format document)
-3. `Cmd+P` → "@" → symbol name (go to symbol)
-4. `Cmd+P` → ":" → line number (go to line)
+3. `Ctrl+Shift+O` → symbol name (go to symbol)
+4. `Cmd+P` → `file:line` (open at line)
 
 ### Terminal + Editor Combo
 
 **Quick edit workflow:**
 ```bash
 # Find and edit
-fd -e py | fzf | xargs code
+fd -e py | fzf | xargs zed
 
 # Grep and edit
-rg -l "pattern" | fzf | xargs code
+rg -l "pattern" | fzf | xargs zed
 
 # Edit modified files
-git status --short | awk '{print $2}' | fzf -m | xargs code
+git status --short | awk '{print $2}' | fzf -m | xargs zed
 ```
 
 **Terminal beside editor:**
@@ -152,11 +150,11 @@ fmt.Printf("DEBUG: %+v\n", variable)
 
 ### Interactive Debugging
 
-**VS Code:**
-1. `F5` → Start debugging
-2. `F9` → Toggle breakpoint
-3. `F10` → Step over
-4. `F11` → Step into
+**Neovim (LazyVim `dap.core` extra):**
+1. `<leader>dc` → Start/continue debugging
+2. `<leader>db` → Toggle breakpoint
+3. `<leader>dO` → Step over
+4. `<leader>di` → Step into
 
 **Terminal debuggers:**
 ```bash
@@ -247,8 +245,8 @@ git commit --no-verify
 ### Quick Commands
 ```bash
 # HTTP requests
-http GET api.example.com/users  # HTTPie
-xh api.example.com/users        # xh (faster)
+xh api.example.com/users        # GET
+xh POST api.example.com/users name=salama  # JSON body
 
 # JSON processing
 curl api.example.com | jq '.data[]'
@@ -273,37 +271,37 @@ alias pns='pnpm start'
 alias pnb='pnpm build'
 alias dcu='docker-compose up'
 alias dcd='docker-compose down'
-alias k='kubectl'
 ```
 
 ### Project Switching
 ```bash
 # With direnv
-cd ~/projects/app1    # auto-loads .envrc
-cd ~/projects/app2    # switches environment
+cd ~/Workspace/app1   # auto-loads .envrc
+cd ~/Workspace/app2   # switches environment
 
 # Quick project opener (add to ~/.zshrc)
 proj() {
-    cd ~/projects/$1 && code .
+    cd ~/Workspace/$1 && zed .
 }
 # Usage: proj myapp
 ```
 
 ## Terminal Multiplexing Workflows
 
-### Zellij Sessions
+### herdr Sessions
 ```bash
-# Project session
-zellij --session myproject
+# Project session (attach, or create if missing)
+hrs myproject          # herdr --session myproject
 
-# Layout for development
-zellij --layout ~/.config/zellij/dev-layout.yaml
+# List and stop sessions
+hrl                    # herdr session list
+hrk myproject          # herdr session stop myproject
 
-# Quick actions in Zellij
-Ctrl+P, N → New pane
-Ctrl+P, D → Split down  
-Ctrl+P, R → Split right
-Ctrl+T, N → New tab
+# Quick actions in herdr (prefix Ctrl+Space)
+Alt+Enter → Split horizontally
+Alt+Shift+Enter → Split vertically
+Ctrl+Alt+Arrow → Focus pane
+Ctrl+Space, c → New tab
 ```
 
 ### Kitty Windows
@@ -327,9 +325,9 @@ eza -la         fd -e js         gc -m ""        go run .
                                 gp              python app.py
 
 Edit:           Debug:           Quality:        Tools:
-code .          F5 (VS Code)     black .         docker-compose up
-nvim file       dbg!()          cargo fmt       k get pods
-Cmd+P (open)    console.log     eslint .        http GET url
+zed .           <leader>dc       black .         docker-compose up
+nvim file       dbg!()          cargo fmt       lazydocker
+Cmd+P (open)    console.log     eslint .        xh GET url
 ```
 
 ## Workflow Optimization Tips
@@ -338,4 +336,4 @@ Cmd+P (open)    console.log     eslint .        http GET url
 2. **Create project templates**: Standardize setup
 3. **Keyboard over mouse**: Learn editor shortcuts
 4. **Automate repetitive tasks**: Shell functions/aliases
-5. **Session management**: Zellij/Kitty for project contexts
+5. **Session management**: herdr/Kitty for project contexts

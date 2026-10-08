@@ -2,6 +2,20 @@
 
 ## Installation Problems
 
+### Installer
+
+**Issue**: `bootstrap.sh` exits with "stdin is not a terminal"
+```bash
+# The installer prompts, so run it with bash -c instead of piping it into bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/salamaashoush/dev-setup/main/bootstrap.sh)"
+```
+
+**Issue**: Packages listed as failed at the end of the install
+```bash
+mise install   # Retry the tools that come from mise
+./install.sh   # Safe to re-run; retries Homebrew/pacman packages
+```
+
 ### Homebrew (macOS)
 
 **Issue**: "Permission denied" during installation
@@ -67,6 +81,9 @@ for i in ~/.config/zsh/*; do
   echo "Sourcing $i"
   time source $i
 done
+
+# 4. Rebuild the cached tool init scripts (brew, mise, starship, zoxide, direnv, fzf, vivid)
+rm -rf ~/.cache/zsh
 ```
 
 ### Command Not Found
@@ -84,6 +101,7 @@ source ~/.zshrc
 exec zsh
 
 # Check installation
+mise ls                  # Runtimes and CLI tools from mise
 brew list | grep command  # macOS
 yay -Qs command          # Arch
 
@@ -122,17 +140,19 @@ tic -x -o ~/.terminfo /tmp/kitty.terminfo
 kitty +kitten ssh user@host
 ```
 
-### Zellij
+### herdr
 
-**Issue**: Sessions not persisting
+**Issue**: Config changes or sessions not showing up
 ```bash
-# Check session location
-zellij --help | grep session
-zellij ls  # List sessions
-
-# Fix permissions
-chmod 700 ~/.cache/zellij
+herdr status                  # Client and running server status
+herdr session list            # Named sessions
+herdr server reload-config    # Re-read ~/.config/herdr/config.toml
+herdr server stop             # Stop the running server, e.g. after mise upgrades herdr
 ```
+
+**Issue**: `Ctrl+Alt+Arrow` does not focus panes
+
+Ghostty's Linux defaults bind these keys to split navigation. `configs/ghostty.conf` unbinds them; if you keep your own Ghostty config, add the same `keybind = ctrl+alt+left=unbind` lines for each arrow.
 
 ## Git Issues
 
@@ -166,26 +186,16 @@ echo "test" | gpg --clearsign
 
 ## Editor Issues
 
-### VS Code
+### Zed
 
-**Issue**: Extensions not loading
+**Issue**: Default theme or icons instead of Tokyo Night Storm
+
+The theme and icons come from the `tokyo-night` and `catppuccin-icons` extensions, which Zed installs on first launch. Until that download finishes Zed shows its defaults; check progress with `zed: extensions` in the command palette.
+
+**Issue**: `zed: command not found` on Arch
 ```bash
-# Clear extension cache
-rm -rf ~/.vscode/extensions/*
-code --list-extensions  # Verify
-
-# Reinstall extensions
-code --install-extension extension-id
-```
-
-**Issue**: Terminal integration broken
-```json
-// settings.json
-{
-  "terminal.integrated.defaultProfile.osx": "zsh",
-  "terminal.integrated.defaultProfile.linux": "zsh",
-  "terminal.integrated.fontFamily": "CaskaydiaCove NF"
-}
+# Arch ships the CLI as zeditor; install.sh links zed to it
+ln -sf "$(command -v zeditor)" ~/.local/bin/zed
 ```
 
 ### Neovim
@@ -196,22 +206,22 @@ code --install-extension extension-id
 rm -rf ~/.local/share/nvim
 rm -rf ~/.cache/nvim
 
-# Reinstall plugins
-nvim +PlugInstall +qall  # Vim-plug
-nvim +PackerSync        # Packer
+# Reinstall plugins (LazyVim uses lazy.nvim)
+nvim --headless "+Lazy! sync" +qa
 ```
 
 ## Development Tool Issues
 
-### Node.js/fnm
+### Node.js/mise
 
-**Issue**: "fnm: command not found"
+**Issue**: "node: command not found" (or any other tool from mise)
 ```bash
-# Add to ~/.zshrc
-eval "$(fnm env --use-on-cd)"
+# mise must be activated in ~/.zshrc (configs/zshrc does this)
+eval "$(mise activate zsh)"
 
-# Verify installation
-curl -fsSL https://fnm.vercel.app/install | bash
+# Check activation, then install anything missing from the mise config
+mise doctor
+mise install
 ```
 
 **Issue**: Global packages not found
@@ -223,16 +233,15 @@ npm config get prefix
 export PATH="$(npm config get prefix)/bin:$PATH"
 ```
 
-### Python/uv
+### Python
 
 **Issue**: "No module named X"
 ```bash
 # Check virtual environment
 which python
-python -m pip list
+uv pip list
 
-# Activate venv
-source .venv/bin/activate  # or
+# Create and activate a venv
 uv venv && source .venv/bin/activate
 ```
 
@@ -240,11 +249,11 @@ uv venv && source .venv/bin/activate
 
 **Issue**: "cargo: command not found"
 ```bash
-# Add to PATH
-source "$HOME/.cargo/env"
+# Rust comes from mise; check where cargo resolves
+mise which cargo
 
 # Reinstall if needed
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+mise install rust
 ```
 
 ## System Performance
