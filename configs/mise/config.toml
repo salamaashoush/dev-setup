@@ -74,8 +74,10 @@ lazydocker = "latest"
 # Editor
 neovim = "latest"
 
-# Coding agent
+# Coding agent, and the tools agent-kit wires into it
 claude = "latest"
+rtk = "latest"
+"github:salamaashoush/ferridriver" = "latest"
 
 # Own tools
 "github:salamaashoush/sweeprs" = "latest"

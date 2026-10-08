@@ -31,8 +31,9 @@ That works on a stock Mac too: `install.sh` notices the old bash and runs
 command applies.
 
 `install.sh` asks everything at the start: your Git name and email, an SSH key
-passphrase, whether to install game development tools, and on Linux whether to
-install gaming packages. After that it runs unattended and ends with a summary
+passphrase, whether to install game development tools, whether to set up
+agent-kit, and on Linux whether to install gaming packages. If agent-kit is on,
+a GitHub sign-in opens in the browser a minute later. After that it runs unattended and ends with a summary
 that lists any package that failed to install. Re-running it is safe and
 updates everything in place.
 
@@ -59,7 +60,11 @@ Line Tools on macOS and `base-devel`/clang on Linux, where mold is also set up
 as the Rust linker.
 
 **AI.** Claude Code, plus the herdr integration that lets herdr resume Claude
-sessions. No other agent is installed.
+sessions. No other agent is installed. With a GitHub sign-in (asked up front),
+[agent-kit](https://github.com/salamaashoush/agent-kit) is cloned to
+`~/Workspace/agent-kit` and installed: global instructions, hooks and skills,
+with rtk and ferridriver (both from mise) wired in. An existing clone there is
+used as it is.
 
 **Containers.** Docker CLI with Compose and Buildx on Colima (macOS) or the
 Docker daemon (Linux), lazydocker, and
@@ -131,7 +136,6 @@ configs/
   rofi/, kwin/, plasma-layout.js   Linux desktop
   scripts/              helpers installed to ~/.local/bin
   project-templates/    starters for Node, Rust and C++ projects
-  claude/               Claude Code commands and settings (not installed)
 docs/                   shortcuts, tool notes, troubleshooting
 scripts/                git-clone-bare-for-worktrees
 ```

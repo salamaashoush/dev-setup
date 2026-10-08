@@ -915,12 +915,10 @@ setup_mise() {
     ensure_directory "$HOME/.config/mise/conf.d"
     cp -f "$CONFIGS_DIR/mise/config.toml" "$HOME/.config/mise/conf.d/dev-setup.toml"
 
-    # Most tools resolve through GitHub releases; an authenticated gh lifts the
-    # anonymous API limit of 60 requests an hour.
-    if [[ -z "${GITHUB_TOKEN:-}" ]] && command_exists gh && gh auth status &>/dev/null; then
-        GITHUB_TOKEN="$(gh auth token)"
-        export GITHUB_TOKEN
-    fi
+
+    # gh first, so the GitHub sign-in comes now rather than after the long installs
+    "$mise_cmd" install gh || true
+    github_sign_in
 
     print_info "Installing runtimes, CLI tools, and Claude Code with mise..."
     if ! "$mise_cmd" install; then
@@ -936,6 +934,23 @@ setup_mise() {
     fi
 
     print_success "Mise setup complete"
+}
+
+# agent-kit is a private repository, so cloning it needs a signed-in gh. Its
+# token also lifts the anonymous GitHub API limit (60 requests an hour) that
+# mise's release lookups would otherwise run into.
+github_sign_in() {
+    command_exists gh || return 0
+    if ! gh auth status &>/dev/null; then
+        [[ "$INSTALL_AGENT_KIT" == true ]] || return 0
+        print_info "Sign in to GitHub in the browser (agent-kit is a private repository)..."
+        if ! gh auth login --hostname github.com --git-protocol https --web; then
+            print_warning "GitHub sign-in failed; agent-kit will be skipped"
+            return 0
+        fi
+    fi
+    GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token)}"
+    export GITHUB_TOKEN
 }
 
 # ==========================================
@@ -1391,6 +1406,7 @@ GIT_NAME=""
 GIT_EMAIL=""
 INSTALL_GAMING=false
 INSTALL_GAMEDEV=false
+INSTALL_AGENT_KIT=true
 
 # Every question is asked here, before the long installs, so the rest of the
 # run needs no attention.
@@ -1425,6 +1441,10 @@ collect_choices() {
     read -p "Install game development tools (engines, Vulkan SDK, profilers)? [y/N] " -n 1 -r
     echo
     [[ $REPLY =~ ^[Yy]$ ]] && INSTALL_GAMEDEV=true
+
+    read -p "Set up agent-kit (Claude Code instructions, hooks, skills; needs a GitHub sign-in)? [Y/n] " -n 1 -r
+    echo
+    [[ $REPLY =~ ^[Nn]$ ]] && INSTALL_AGENT_KIT=false
 
     setup_ssh_key
     print_success "Answers recorded. The rest of the install runs unattended."
@@ -1867,7 +1887,31 @@ setup_development_tools() {
         herdr integration install claude || print_warning "herdr Claude Code integration failed"
     fi
 
+    setup_agent_kit
+
     print_success "Development tools setup complete"
+}
+
+# agent-kit (https://github.com/salamaashoush/agent-kit) carries Claude Code's
+# global instructions, hooks and skills. It installs by symlink, so the clone in
+# ~/Workspace is the live copy: an existing one is used as it is, never pulled.
+setup_agent_kit() {
+    [[ "$INSTALL_AGENT_KIT" == true ]] || return 0
+    local dir="$HOME/Workspace/agent-kit"
+
+    if [[ ! -d "$dir/.git" ]]; then
+        if ! command_exists gh || ! gh auth status &>/dev/null; then
+            print_warning "agent-kit skipped: GitHub is not signed in. Later run:"
+            print_warning "  gh auth login && gh repo clone salamaashoush/agent-kit ~/Workspace/agent-kit && ~/Workspace/agent-kit/install.sh"
+            FAILED_PACKAGES+=("agent-kit (GitHub not signed in)")
+            return 0
+        fi
+        gh repo clone salamaashoush/agent-kit "$dir" || { FAILED_PACKAGES+=("agent-kit (clone)"); return 0; }
+    fi
+
+    # Its installer needs Python 3.11+, which python3 resolves to through the mise shims
+    print_info "Installing agent-kit..."
+    "$dir/install.sh" || FAILED_PACKAGES+=("agent-kit (install; re-run $dir/install.sh after signing in to claude)")
 }
 
 # ==========================================
