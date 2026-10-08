@@ -1,0 +1,86 @@
+# Installed to ~/.config/mise/conf.d/dev-setup.toml, which mise merges into the
+# global config, so tools added later with `mise use -g` land in config.toml
+# and survive a re-run of install.sh.
+#
+# Anything the mise registry carries is installed from here rather than by
+# Homebrew or pacman, so macOS and Linux run the same versions. `mise up` (or
+# topgrade) upgrades them. Tools that need system integration (zsh, git, docker,
+# btop's sensors, GUI apps, fonts) or ship no macOS arm64 binary (eza) stay
+# with the platform package manager.
+
+[tools]
+# Runtimes and package managers
+node = "lts"
+bun = "latest"
+# wasm32 for web/WASM work (Leptos, Yew, wasm-pack, Bevy web builds)
+rust = { version = "latest", components = ["rust-analyzer", "clippy", "rustfmt"], targets = ["wasm32-unknown-unknown"] }
+pnpm = "latest"
+yarn = "latest"
+# Prebuilt python-build-standalone interpreters; uv handles packages and venvs
+python = "latest"
+uv = "latest"
+
+# Build tools
+cmake = "latest"
+ninja = "latest"
+just = "latest"
+sccache = "latest"
+cargo-binstall = "latest"
+
+# Cargo subcommands; mise fetches prebuilt binaries through cargo-binstall
+"cargo:cargo-watch" = "latest"
+"cargo:cargo-edit" = "latest"
+"cargo:cargo-outdated" = "latest"
+"cargo:cargo-audit" = "latest"
+"cargo:cargo-expand" = "latest"
+"cargo:cargo-nextest" = "latest"
+"cargo:bacon" = "latest"
+"cargo:wasm-pack" = "latest"
+
+# Shell and CLI
+starship = "latest"
+bat = "latest"
+ripgrep = "latest"
+fd = "latest"
+fzf = "latest"
+zoxide = "latest"
+direnv = "latest"
+dust = "latest"
+duf = "latest"
+gping = "latest"
+fastfetch = "latest"
+topgrade = "latest"
+jq = "latest"
+yq = "latest"
+xh = "latest"
+doggo = "latest"
+miniserve = "latest"
+cloudflared = "latest"
+tlrc = "latest"
+hyperfine = "latest"
+tokei = "latest"
+yazi = "latest"
+vivid = "latest"
+ast-grep = "latest"
+mkcert = "latest"
+
+# Git and containers
+gh = "latest"
+delta = "latest"
+lazygit = "latest"
+gitui = "latest"
+lazydocker = "latest"
+
+# Editor
+neovim = "latest"
+
+# Coding agent
+claude = "latest"
+
+# Own tools
+"github:salamaashoush/sweeprs" = "latest"
+
+[settings.upgrade]
+# A running agent or herdr server executes from its install directory; pruning
+# the old version on upgrade deletes it out from under the live process.
+auto_prune = false

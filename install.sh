@@ -53,15 +53,19 @@ trap 'error_handler ${LINENO} $?' ERR
 # ==========================================
 
 if [[ "${BASH_VERSION%%.*}" -lt 4 ]]; then
+    for candidate in /opt/homebrew/bin/bash /usr/local/bin/bash; do
+        if [[ -x "$candidate" ]] && "$candidate" -c '((BASH_VERSINFO[0] >= 4))'; then
+            echo "Re-running with $candidate (Bash $BASH_VERSION is too old)..."
+            exec "$candidate" "$0" ${1+"$@"}
+        fi
+    done
+    if [[ "$OSTYPE" == darwin* ]]; then
+        # Stock macOS: bootstrap.sh installs Homebrew and a current bash, then runs this script again
+        exec /bin/bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/bootstrap.sh" ${1+"$@"}
+    fi
     echo "Error: This script requires Bash 4.0 or higher."
     echo "Current version: $BASH_VERSION"
-    if [[ -f /opt/homebrew/bin/bash ]] && [[ "$(/opt/homebrew/bin/bash --version | head -1 | cut -d' ' -f4 | cut -d'.' -f1)" -ge 4 ]]; then
-        echo "Bash 4+ found at /opt/homebrew/bin/bash. Re-running with it..."
-        exec /opt/homebrew/bin/bash "$0" "$@"
-    else
-        echo "Please install Bash 4+ (e.g., 'brew install bash' on macOS)"
-        exit 1
-    fi
+    exit 1
 fi
 
 # ==========================================
@@ -211,7 +215,8 @@ ensure_directory() {
 backup_file() {
     local file="$1"
     if [[ -e "$file" ]]; then
-        local backup_dir="$HOME/.dev-setup-backup/$(date +%Y%m%d_%H%M%S)"
+        local backup_dir
+        backup_dir="$HOME/.dev-setup-backup/$(date +%Y%m%d_%H%M%S)"
         ensure_directory "$backup_dir"
         cp -r "$file" "$backup_dir/$(basename "$file")"
         print_info "Backed up $file"
@@ -230,6 +235,45 @@ aur_install() {
         return 1
     fi
     "$aur_cmd" -S --needed --noconfirm "$@"
+}
+
+FAILED_PACKAGES=()
+
+# One renamed, removed, or disabled name makes Homebrew reject the whole batch,
+# so on failure retry each package alone and record what still fails.
+brew_install() {
+    local kind=()
+    if [[ "${1:-}" == "--cask" ]]; then
+        kind=(--cask)
+        shift
+    fi
+    brew install "${kind[@]}" "$@" && return 0
+
+    local pkg
+    for pkg in "$@"; do
+        brew list "${kind[@]}" "$pkg" &>/dev/null && continue
+        brew install "${kind[@]}" "$pkg" || FAILED_PACKAGES+=("$pkg")
+    done
+    return 0
+}
+
+# Apple Silicon and Intel Macs use different Homebrew prefixes
+load_brew_env() {
+    local candidate
+    for candidate in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+        if [[ -x "$candidate" ]]; then
+            eval "$("$candidate" shellenv)"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Ask for the password once, then refresh the timestamp so long downloads do not
+# leave a later step waiting at a sudo prompt.
+keep_sudo_alive() {
+    sudo -v || { print_error "sudo access is required"; exit 1; }
+    while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done 2>/dev/null &
 }
 
 download_file() {
@@ -295,10 +339,18 @@ preflight_checks() {
         fi
 
         # Install Homebrew if missing
-        if ! command_exists brew; then
+        if ! load_brew_env; then
             print_info "Installing Homebrew..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-            eval "$(/opt/homebrew/bin/brew shellenv)"
+            NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            load_brew_env || { print_error "Homebrew installation failed"; exit 1; }
+        fi
+        print_success "Homebrew $(brew --version | head -1 | awk '{print $2}') at $(brew --prefix)"
+
+        # Colima's config enables Rosetta for x86_64 containers, and some casks
+        # still ship Intel-only binaries
+        if [[ "$(uname -m)" == "arm64" ]] && ! arch -x86_64 /usr/bin/true &>/dev/null; then
+            print_info "Installing Rosetta 2..."
+            sudo softwareupdate --install-rosetta --agree-to-license || print_warning "Rosetta installation failed"
         fi
     elif is_arch_linux; then
         # Check for essential Arch Linux tools
@@ -672,12 +724,11 @@ install_nerd_fonts() {
     if is_macos; then
         # macOS - use Homebrew casks
         print_info "Installing fonts via Homebrew..."
-        brew install --cask \
+        brew_install --cask \
             font-caskaydia-cove-nerd-font \
             font-jetbrains-mono-nerd-font \
             font-symbols-only-nerd-font \
-            font-fira-code-nerd-font \
-            2>/dev/null || true
+            font-fira-code-nerd-font
     else
         # Linux (Arch) - use pacman/yay
         if command_exists paru || command_exists yay; then
@@ -726,7 +777,8 @@ install_nerd_fonts_manual() {
     fi
 
     ensure_directory "$font_dir"
-    local temp_dir=$(mktemp -d)
+    local temp_dir
+    temp_dir=$(mktemp -d)
 
     print_info "Downloading Nerd Fonts to $temp_dir..."
 
@@ -826,11 +878,6 @@ install_tokyo_night_themes() {
     fi
 
 
-    if command_exists zellij && [[ -d "$HOME/.config/zellij" ]]; then
-        ensure_directory "$HOME/.config/zellij/themes"
-        curl -fsSL "$theme_base/zellij/tokyonight_storm.kdl" -o "$HOME/.config/zellij/themes/tokyonight_storm.kdl" 2>/dev/null || true
-    fi
-
     if command_exists gitui && [[ -d "$HOME/.config/gitui" ]]; then
         curl -fsSL "$theme_base/gitui/tokyonight_storm.ron" -o "$HOME/.config/gitui/theme.ron" 2>/dev/null || true
     fi
@@ -846,12 +893,14 @@ setup_mise() {
     # Install mise
     if ! command_exists mise && [[ ! -f "$HOME/.local/bin/mise" ]]; then
         print_info "Installing mise..."
-        curl https://mise.run | sh
-        export PATH="$HOME/.local/bin:$PATH"
+        curl -fsSL https://mise.run | sh
     else
         print_success "Mise already installed"
     fi
-    
+
+    # Later steps configure tools mise installs, so they must resolve during this run
+    export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$PATH"
+
     # Determine mise executable path
     local mise_cmd=""
     if [[ -f "$HOME/.local/bin/mise" ]]; then
@@ -863,29 +912,30 @@ setup_mise() {
         return 1
     fi
 
-    # Install global tools with mise
-    print_info "Installing development tools with mise..."
+    ensure_directory "$HOME/.config/mise/conf.d"
+    cp -f "$CONFIGS_DIR/mise/config.toml" "$HOME/.config/mise/conf.d/dev-setup.toml"
 
-    # Install Node.js LTS
-    "$mise_cmd" use --global node@lts || true
+    # Most tools resolve through GitHub releases; an authenticated gh lifts the
+    # anonymous API limit of 60 requests an hour.
+    if [[ -z "${GITHUB_TOKEN:-}" ]] && command_exists gh && gh auth status &>/dev/null; then
+        GITHUB_TOKEN="$(gh auth token)"
+        export GITHUB_TOKEN
+    fi
 
-    # REMOVED: Python setup
-    # "$mise_cmd" use --global python@3.12 || true
+    print_info "Installing runtimes, CLI tools, and Claude Code with mise..."
+    if ! "$mise_cmd" install; then
+        # mise installs every tool it can before failing, so only the ones it named above are missing
+        print_warning "Some mise tools failed to install; re-run 'mise install' to retry them"
+        FAILED_PACKAGES+=("mise install (see errors above)")
+    fi
 
-    # Install Bun
-    "$mise_cmd" use --global bun@latest || true
+    # Omarchy ships herdr as a system package; a mise copy earlier on PATH would
+    # shadow it with a client that may not speak the packaged server's protocol.
+    if ! command_exists herdr; then
+        "$mise_cmd" use --global herdr@latest || FAILED_PACKAGES+=("mise:herdr")
+    fi
 
-    # REMOVED: Go setup
-    # "$mise_cmd" use --global go@latest || true
-
-    # Install Rust
-    "$mise_cmd" use --global rust@latest || true
-
-    # REMOVED: Other languages not needed for web/Rust dev
-    # "$mise_cmd" use --global java@21 || true
-    # "$mise_cmd" use --global ruby@latest || true
-
-    print_success "Mise setup complete with global tools installed"
+    print_success "Mise setup complete"
 }
 
 # ==========================================
@@ -897,8 +947,7 @@ setup_terminal_and_shell() {
 
     # Install terminal emulators (Ghostty is primary)
     if is_macos; then
-        brew install --cask ghostty || true
-        brew install --cask kitty || true  # Fallback
+        brew_install --cask ghostty kitty
     else
         # Ghostty installation on Arch
         local aur_cmd=""; command_exists paru && aur_cmd="paru" || aur_cmd="yay"
@@ -964,13 +1013,13 @@ EOF
 
     # Install CLI tools
     if is_macos; then
-        brew install eza bat ripgrep ast-grep fd fzf zoxide direnv btop dust duf gping procs neofetch topgrade jq yq xsv xh mtr nmap bandwhich doggo miniserve cloudflared tldr hyperfine tokei gh tree watch yazi asciinema noti vivid zellij zsh starship || true
+        # Everything else on the command line comes from configs/mise/config.toml
+        brew_install zsh eza btop procs xan mtr nmap bandwhich tree watch asciinema noti
     else
         # Split into groups so one failure doesn't block the rest
-        aur_install eza bat ripgrep fd fzf zoxide direnv btop zsh starship zellij || true
-        aur_install dust duf gping procs topgrade jq yq tree procps-ng yazi vivid || true
-        aur_install xh mtr nmap tldr hyperfine tokei github-cli asciinema || true
-        aur_install ast-grep xsv bandwhich doggo miniserve cloudflared-bin noti wmctrl xdotool || true
+        # Everything else on the command line comes from configs/mise/config.toml
+        aur_install zsh eza btop procs tree procps-ng || true
+        aur_install mtr nmap asciinema xan bandwhich noti wmctrl xdotool || true
     fi
 
     # Configure Yazi
@@ -1067,15 +1116,14 @@ EOF
         cp -f "$CONFIGS_DIR/tokyonight-storm.yml" "$HOME/.config/vivid/themes/tokyonight-storm.yml"
     fi
 
-    # Configure Zellij
-    if command_exists zellij && [[ -f "$CONFIGS_DIR/zellij.kdl" ]]; then
-        ensure_directory "$HOME/.config/zellij"
-        cp -f "$CONFIGS_DIR/zellij.kdl" "$HOME/.config/zellij/config.kdl"
-        # Install layouts
-        if [[ -d "$CONFIGS_DIR/zellij-layouts" ]]; then
-            ensure_directory "$HOME/.config/zellij/layouts"
-            cp -f "$CONFIGS_DIR/zellij-layouts/"*.kdl "$HOME/.config/zellij/layouts/" 2>/dev/null || true
-        fi
+    # .zshrc caches tool init scripts keyed on each binary; the vivid output
+    # also depends on the theme above, so make the next shell rebuild them
+    rm -f "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/*.key
+
+    # Configure herdr
+    if command_exists herdr && [[ -f "$CONFIGS_DIR/herdr/config.toml" ]]; then
+        ensure_directory "$HOME/.config/herdr"
+        cp -f "$CONFIGS_DIR/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     fi
 
     # Install Tokyo Night themes for installed tools
@@ -1083,9 +1131,6 @@ EOF
 
     # Set Ghostty as default terminal
     set_default_terminal
-
-    # Set Chrome as default browser
-    set_default_browser "chrome"
 
     # Setup Rofi launcher (Linux only)
     setup_rofi
@@ -1270,7 +1315,7 @@ set_default_terminal() {
     if is_macos; then
         # macOS: Set default terminal via Launch Services
         # Ghostty registers itself, but we can set it as default handler
-        if [[ -d "/Applications/Ghostty.app" ]]; then
+        if [[ -d "/Applications/Ghostty.app" ]] && ! defaults read com.apple.LaunchServices/com.apple.launchservices.secure LSHandlers 2>/dev/null | grep -q 'com.mitchellh.ghostty'; then
             # Set Ghostty as default terminal emulator
             defaults write com.apple.LaunchServices/com.apple.launchservices.secure LSHandlers -array-add \
                 '{LSHandlerContentType = "public.unix-executable"; LSHandlerRoleAll = "com.mitchellh.ghostty";}' 2>/dev/null || true
@@ -1342,43 +1387,95 @@ set_default_browser() {
 # Git Configuration
 # ==========================================
 
+GIT_NAME=""
+GIT_EMAIL=""
+INSTALL_GAMING=false
+INSTALL_GAMEDEV=false
+
+# Every question is asked here, before the long installs, so the rest of the
+# run needs no attention.
+collect_choices() {
+    print_header "Setup Questions"
+
+    GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
+    GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+
+    if [[ -z "$GIT_NAME" ]]; then
+        read -r -p "Enter your name for Git commits: " GIT_NAME
+        if [[ -z "$GIT_NAME" ]]; then
+            GIT_NAME="Developer"
+            print_warning "Using default name: Developer"
+        fi
+    fi
+
+    if [[ -z "$GIT_EMAIL" ]]; then
+        read -r -p "Enter your email for Git commits: " GIT_EMAIL
+        if [[ -z "$GIT_EMAIL" ]]; then
+            GIT_EMAIL="developer@example.com"
+            print_warning "Using default email: developer@example.com"
+        fi
+    fi
+
+    if is_linux; then
+        read -p "Install gaming packages (Steam, Lutris, Wine, MangoHud)? [y/N] " -n 1 -r
+        echo
+        [[ $REPLY =~ ^[Yy]$ ]] && INSTALL_GAMING=true
+    fi
+
+    read -p "Install game development tools (engines, Vulkan SDK, profilers)? [y/N] " -n 1 -r
+    echo
+    [[ $REPLY =~ ^[Yy]$ ]] && INSTALL_GAMEDEV=true
+
+    setup_ssh_key
+    print_success "Answers recorded. The rest of the install runs unattended."
+}
+
+setup_ssh_key() {
+    local ssh_key="$HOME/.ssh/id_ed25519"
+    if [[ ! -f "$ssh_key" ]]; then
+        mkdir -p "$HOME/.ssh"
+        chmod 700 "$HOME/.ssh"
+        print_info "You can set a passphrase for extra security (press Enter for none)"
+        ssh-keygen -t ed25519 -C "$GIT_EMAIL" -f "$ssh_key"
+        chmod 600 "$ssh_key"
+        chmod 644 "${ssh_key}.pub"
+        print_info "SSH key generated. Public key:"
+        cat "${ssh_key}.pub"
+    fi
+
+    # macOS: keep the passphrase in the login Keychain so it is asked once
+    if is_macos; then
+        local ssh_config="$HOME/.ssh/config"
+        if ! grep -qs 'UseKeychain' "$ssh_config"; then
+            # IgnoreUnknown keeps a non-Apple ssh (e.g. Homebrew openssh) from rejecting UseKeychain
+            cat >> "$ssh_config" << 'SSHCONF'
+
+Host *
+  IgnoreUnknown UseKeychain
+  UseKeychain yes
+  AddKeysToAgent yes
+  IdentityFile ~/.ssh/id_ed25519
+SSHCONF
+            chmod 600 "$ssh_config"
+        fi
+        ssh-add --apple-use-keychain "$ssh_key" 2>/dev/null || true
+    fi
+}
+
 setup_git() {
     print_header "Git Configuration"
 
     # Install git tools
     if is_macos; then
-        brew install git git-delta lazygit gitui || true
+        brew_install git
     else
-        aur_install git git-delta lazygit gitui || true
+        aur_install git || true
     fi
 
     # Configure Git
     if command_exists git; then
-        # Get user info
-        local current_name=$(git config --global user.name 2>/dev/null || echo "")
-        local current_email=$(git config --global user.email 2>/dev/null || echo "")
-        local git_name="$current_name"
-        local git_email="$current_email"
-        
-        # Prompt for name if not set
-        if [[ -z "$git_name" ]]; then
-            print_info "Git user name not configured"
-            read -p "Enter your name for Git commits: " git_name
-            if [[ -z "$git_name" ]]; then
-                git_name="Developer"
-                print_warning "Using default name: Developer"
-            fi
-        fi
-        
-        # Prompt for email if not set
-        if [[ -z "$git_email" ]]; then
-            print_info "Git user email not configured"
-            read -p "Enter your email for Git commits: " git_email
-            if [[ -z "$git_email" ]]; then
-                git_email="developer@example.com"
-                print_warning "Using default email: developer@example.com"
-            fi
-        fi
+        local git_name="$GIT_NAME"
+        local git_email="$GIT_EMAIL"
 
         # Install gitconfig
         if [[ -f "$CONFIGS_DIR/gitconfig" ]]; then
@@ -1411,17 +1508,9 @@ setup_git() {
             git config --global credential.helper 'cache --timeout=3600'
         fi
 
-        # Generate SSH key if needed
-        local ssh_key="$HOME/.ssh/id_ed25519"
-        if [[ ! -f "$ssh_key" ]]; then
-            mkdir -p "$HOME/.ssh"
-            chmod 700 "$HOME/.ssh"
-            print_info "You can set a passphrase for extra security (press Enter for none)"
-            ssh-keygen -t ed25519 -C "$git_email" -f "$ssh_key"
-            chmod 600 "$ssh_key"
-            chmod 644 "${ssh_key}.pub"
-            print_info "SSH key generated. Public key:"
-            cat "${ssh_key}.pub"
+        # The template replaced any helper `gh auth login` registered earlier
+        if command_exists gh && gh auth status &>/dev/null; then
+            gh auth setup-git || true
         fi
 
         # Setup SSH agent (Linux only - macOS uses keychain)
@@ -1469,6 +1558,33 @@ EOF
 # ==========================================
 # Development Tools
 # ==========================================
+
+# ==========================================
+# Docker CLI Plugins (macOS)
+# ==========================================
+
+# Homebrew's compose and buildx are CLI plugins outside Docker's default search
+# path, so `docker compose` and `docker buildx` fail until the CLI is told where they are.
+configure_docker_cli_plugins() {
+    local cfg="$HOME/.docker/config.json"
+    local plugin_dir
+    plugin_dir="$(brew --prefix)/lib/docker/cli-plugins"
+    ensure_directory "$HOME/.docker"
+
+    if [[ ! -s "$cfg" ]]; then
+        printf '{\n  "cliPluginsExtraDirs": ["%s"]\n}\n' "$plugin_dir" > "$cfg"
+    elif command_exists jq; then
+        local tmp
+        tmp=$(mktemp)
+        jq --arg dir "$plugin_dir" \
+            '.cliPluginsExtraDirs = ((.cliPluginsExtraDirs // []) + [$dir] | unique)' \
+            "$cfg" > "$tmp" && mv "$tmp" "$cfg"
+    else
+        print_warning "Add \"cliPluginsExtraDirs\": [\"$plugin_dir\"] to $cfg for docker compose/buildx"
+        return 0
+    fi
+    print_success "Docker CLI plugins registered from $plugin_dir"
+}
 
 # ==========================================
 # Docker Setup (Linux)
@@ -1612,32 +1728,6 @@ verify_docker() {
 # Development Tools Setup
 # ==========================================
 
-# cargo-binstall pulls prebuilt binaries instead of compiling each tool from source
-setup_rust_tooling() {
-    command_exists cargo || { print_warning "cargo not found — skipping Rust tooling"; return 0; }
-
-    local tools=(
-        cargo-watch cargo-edit cargo-outdated cargo-audit cargo-expand
-        cargo-nextest bacon
-    )
-
-    if command_exists cargo-binstall; then
-        print_step "Installing Rust tools via cargo-binstall..."
-        cargo binstall --no-confirm --disable-telemetry "${tools[@]}" 2>/dev/null || \
-            cargo install "${tools[@]}" || true
-    else
-        cargo install "${tools[@]}" || true
-    fi
-
-    # wasm32 target for web/WASM work (Leptos, Yew, wasm-pack, Bevy web builds)
-    if command_exists rustup; then
-        rustup target add wasm32-unknown-unknown 2>/dev/null || true
-        rustup component add rust-analyzer clippy rustfmt 2>/dev/null || true
-    fi
-
-    print_success "Rust tooling installed"
-}
-
 setup_rust_cargo_config() {
     is_linux || return 0
     command_exists mold || return 0
@@ -1670,86 +1760,40 @@ EOF
 setup_development_tools() {
     print_header "Development Tools Setup"
 
-    # Build tools for Rust/Web/C++ development
-    if is_macos; then
-        brew install cmake ninja just || true
-    else
-        aur_install base-devel cmake ninja gcc clang just || true
-    fi
+    # Where projects live; Bolt's repository search scans it
+    ensure_directory "$HOME/Workspace"
 
-    # Ensure mise-managed tools are available
-    export PATH="$HOME/.local/share/mise/shims:$PATH"
-
-    # REMOVED: Python tools
-    # Node/JS tools only
-    if is_macos; then
-        brew install pnpm yarn || true
-    else
-        aur_install pnpm yarn || true
-    fi
-
-    # Rust toolchain support tools
-    if is_macos; then
-        brew install cargo-binstall sccache wasm-pack || true
-    else
+    # Compilers and linkers. cmake, ninja, just, the JS and Rust toolchains, and
+    # the cargo tools come from configs/mise/config.toml.
+    if is_linux; then
         # mold: dramatically faster linking, which dominates Rust rebuild time
-        aur_install cargo-binstall sccache wasm-pack mold lld || true
+        aur_install base-devel gcc clang mold lld || true
     fi
 
-    # Bun is already installed via mise
-
-    setup_rust_tooling
     setup_rust_cargo_config
 
     # Code Editors
     if is_macos; then
-        brew install neovim || true
-        brew install --cask visual-studio-code zed || true
+        brew_install --cask zed
     else
-        aur_install neovim visual-studio-code-bin zed || true
+        aur_install zed || true
+        # Arch ships the CLI as zeditor; link `zed` so scripts, yazi and muscle memory agree
+        if ! command_exists zed && command_exists zeditor; then
+            ensure_directory "$HOME/.local/bin"
+            ln -sf "$(command -v zeditor)" "$HOME/.local/bin/zed"
+        fi
     fi
 
-    # Configure Neovim (LazyVim)
-    if command_exists nvim; then
-        [[ -d "$HOME/.config/nvim" ]] && backup_file "$HOME/.config/nvim" && rm -rf "$HOME/.config/nvim"
-        git clone https://github.com/LazyVim/starter "$HOME/.config/nvim" || true
-        # Install LazyVim config
-        [[ -f "$CONFIGS_DIR/lazyvim.json" ]] && cp -f "$CONFIGS_DIR/lazyvim.json" "$HOME/.config/nvim/lazyvim.json"
+    # Configure Neovim (LazyVim). An existing config is left alone so a re-run
+    # does not replace customisations with a fresh starter.
+    if command_exists nvim && [[ ! -d "$HOME/.config/nvim" ]]; then
+        if git clone https://github.com/LazyVim/starter "$HOME/.config/nvim"; then
+            [[ -f "$CONFIGS_DIR/lazyvim.json" ]] && cp -f "$CONFIGS_DIR/lazyvim.json" "$HOME/.config/nvim/lazyvim.json"
+        fi
     fi
-
-    # DISABLED: VS Code configuration
-    # # Configure VS Code
-    # if command_exists code && [[ -d "$CONFIGS_DIR/vscode" ]]; then
-    #     local vscode_dir=""
-    #     if is_macos; then
-    #         vscode_dir="$HOME/Library/Application Support/Code/User"
-    #     else
-    #         vscode_dir="$HOME/.config/Code/User"
-    #     fi
-    #     ensure_directory "$vscode_dir"
-    #     [[ -f "$CONFIGS_DIR/vscode/settings.json" ]] && cp -f "$CONFIGS_DIR/vscode/settings.json" "$vscode_dir/settings.json"
-    #     [[ -f "$CONFIGS_DIR/vscode/keybindings.json" ]] && cp -f "$CONFIGS_DIR/vscode/keybindings.json" "$vscode_dir/keybindings.json"
-    #     [[ -d "$CONFIGS_DIR/vscode/snippets" ]] && cp -rf "$CONFIGS_DIR/vscode/snippets" "$vscode_dir/snippets"
-
-    #     # Install extensions
-    #     if [[ -f "$CONFIGS_DIR/vscode/extensions.txt" ]]; then
-    #         print_info "Installing VS Code extensions..."
-    #         # Get list of installed extensions
-    #         local installed_extensions=$(code --list-extensions 2>/dev/null || echo "")
-
-    #         while IFS= read -r ext; do
-    #             [[ -z "$ext" || "$ext" =~ ^# ]] && continue
-    #             # Check if extension is already installed
-    #             if ! echo "$installed_extensions" | grep -qi "^${ext}$"; then
-    #                 code --install-extension "$ext" --force 2>/dev/null || true
-    #             fi
-    #         done < "$CONFIGS_DIR/vscode/extensions.txt"
-    #     fi
-    # fi
-
 
     # Configure Zed
-    if command_exists zed && [[ -d "$CONFIGS_DIR/zed" ]]; then
+    if { command_exists zed || command_exists zeditor; } && [[ -d "$CONFIGS_DIR/zed" ]]; then
         local zed_dir="$HOME/.config/zed"
         ensure_directory "$zed_dir"
         [[ -f "$CONFIGS_DIR/zed/settings.json" ]] && cp -f "$CONFIGS_DIR/zed/settings.json" "$zed_dir/settings.json"
@@ -1759,7 +1803,8 @@ setup_development_tools() {
 
     # Container Tools
     if is_macos; then
-        brew install docker docker-buildx docker-compose colima lazydocker || true
+        brew_install docker docker-buildx docker-compose colima
+        configure_docker_cli_plugins
 
         # Configure Colima
         if command_exists colima && [[ -f "$CONFIGS_DIR/colima/colima.yaml" ]]; then
@@ -1788,27 +1833,26 @@ setup_development_tools() {
         fi
     else
         # Install Docker and tools
-        aur_install docker docker-buildx docker-compose lazydocker || true
+        aur_install docker docker-buildx docker-compose || true
 
         # Setup Docker permissions and group
         setup_docker_linux
     fi
 
+    # Dockside (https://github.com/salamaashoush/dockside), a desktop app for Docker,
+    # Colima and Kubernetes. Its installer fetches the latest release into
+    # /Applications on macOS or ~/.local/bin as an AppImage on Linux.
+    print_info "Installing Dockside..."
+    curl -fsSL https://raw.githubusercontent.com/salamaashoush/dockside/main/scripts/install.sh | bash \
+        || FAILED_PACKAGES+=("dockside")
+
     # REMOVED: Database GUI tools - use web-based tools instead
 
     # API Tools for web development
     if is_macos; then
-        brew install httpie || true
-        brew install --cask insomnia || true
+        brew_install --cask insomnia
     else
-        aur_install httpie insomnia-bin || true
-    fi
-
-    # Essential container tools only
-    if is_macos; then
-        brew install mkcert || true
-    else
-        aur_install mkcert || true
+        aur_install insomnia-bin || true
     fi
 
     # Mise handles most version management now
@@ -1816,14 +1860,11 @@ setup_development_tools() {
 
     # REMOVED: Haskell toolchain not needed for web/Rust dev
 
-    # Claude Code CLI (native installer)
-    print_info "Installing Claude Code CLI..."
-    curl -fsSL https://claude.ai/install.sh | bash -s -- --force || true
-
-    # GitHub CLI Copilot extension
-    if command_exists gh; then
-        print_info "Installing GitHub CLI Copilot extension..."
-        gh extension install github/gh-copilot 2>/dev/null || gh extension upgrade gh-copilot 2>/dev/null || true
+    # Claude Code comes from the mise config. This lets herdr resume its
+    # sessions after a server restart.
+    if command_exists herdr; then
+        ensure_directory "$HOME/.claude"
+        herdr integration install claude || print_warning "herdr Claude Code integration failed"
     fi
 
     print_success "Development tools setup complete"
@@ -1838,7 +1879,7 @@ setup_productivity_apps() {
 
     # Window Management (useful for gaming too)
     if is_macos; then
-        brew install --cask rectangle stats || true
+        brew_install --cask rectangle stats
     fi
 
     # System Monitoring (for gaming performance)
@@ -1849,10 +1890,8 @@ setup_productivity_apps() {
         aur_install plasma-systemmonitor || true
     fi
 
-    # App Launchers
-    if is_macos; then
-        brew install --cask raycast || true
-    elif is_kde_plasma; then
+    # App Launchers (macOS: Bolt, built by setup_bolt at the end of the run)
+    if is_kde_plasma; then
         # DISABLED: Rofi setup
         # aur_install rofi-wayland || true
 
@@ -1877,12 +1916,10 @@ setup_productivity_apps() {
 
     # Gaming platforms and tools
     if is_macos; then
-        brew install --cask steam || true
+        brew_install --cask steam
     else
         # Steam and gaming essentials for Linux (optional — ~2GB+ download)
-        read -p "Install gaming packages (Steam, Lutris, Wine, MangoHud)? [y/N] " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        if [[ "$INSTALL_GAMING" != true ]]; then
         print_info "Skipping gaming packages"
         else
 
@@ -1983,7 +2020,7 @@ EOF
 
     # Screen Recording (for gaming clips)
     if is_macos; then
-        brew install --cask obs || true
+        brew_install --cask obs
     else
         aur_install obs-studio || true
     fi
@@ -1998,13 +2035,11 @@ EOF
 setup_game_development() {
     print_header "Game Development"
 
-    read -p "Install game development tools (engines, Vulkan SDK, profilers)? [y/N] " -n 1 -r
-    echo
-    [[ ! $REPLY =~ ^[Yy]$ ]] && { print_info "Skipping game development tools"; return 0; }
+    [[ "$INSTALL_GAMEDEV" != true ]] && { print_info "Skipping game development tools"; return 0; }
 
     if is_macos; then
-        brew install --cask godot blender || true
-        brew install molten-vk || true
+        brew_install --cask godot blender
+        brew_install molten-vk
         print_success "Game development tools installed"
         return 0
     fi
@@ -2189,35 +2224,89 @@ setup_gaming_network() {
 setup_advanced_tools() {
     print_header "Communication & Media Tools"
 
-    # Performance Tools for development
-    if is_macos; then
-        brew install hyperfine tokei || true
-    else
-        aur_install hyperfine tokei || true
-    fi
-
     # Media tools (useful for web dev and gaming)
     if is_macos; then
-        brew install imagemagick ffmpeg || true
+        brew_install imagemagick ffmpeg
     else
         aur_install imagemagick ffmpeg || true
     fi
 
     # Browser (Chrome as default)
     if is_macos; then
-        brew install --cask google-chrome || true
+        brew_install --cask google-chrome
     else
         aur_install google-chrome || true
     fi
+    set_default_browser "chrome"
 
     # Communication Tools (Discord for gaming, Slack for work)
     if is_macos; then
-        brew install --cask discord slack 1password || true
+        brew_install --cask discord slack 1password
     else
         aur_install discord slack-desktop-wayland 1password || true
     fi
 
     print_success "Communication & media tools setup complete"
+}
+
+# ==========================================
+# Bolt Launcher (macOS)
+# ==========================================
+
+# Bolt (https://github.com/salamaashoush/bolt) has no releases, so build it from a
+# clone kept outside ~/Workspace, which leaves any development checkout alone. It
+# runs last: the first build creates a self-signed signing certificate, and macOS
+# asks in a dialog to trust it and to let codesign use the key.
+setup_bolt() {
+    is_macos || return 0
+    print_header "Bolt Launcher"
+
+    local macos_major swift_version
+    macos_major=$(sw_vers -productVersion | cut -d. -f1)
+    if (( macos_major < 15 )); then
+        print_warning "Bolt needs macOS 15 or later (this is $(sw_vers -productVersion)); skipping"
+        FAILED_PACKAGES+=("bolt (needs macOS 15+)")
+        return 0
+    fi
+
+    # Package.swift declares swift-tools-version 6.2
+    swift_version=$(swift --version 2>/dev/null | grep -oE 'Swift version [0-9]+\.[0-9]+' | awk '{print $3}')
+    local swift_major=${swift_version%%.*} swift_minor=${swift_version#*.}
+    if [[ -z "$swift_version" ]] || (( swift_major < 6 || (swift_major == 6 && swift_minor < 2) )); then
+        print_warning "Bolt needs Swift 6.2 (found ${swift_version:-none}); update the Command Line Tools with softwareupdate"
+        FAILED_PACKAGES+=("bolt (needs Swift 6.2)")
+        return 0
+    fi
+
+    local src="${XDG_DATA_HOME:-$HOME/.local/share}/bolt"
+    if [[ -d "$src/.git" ]]; then
+        git -C "$src" pull --ff-only || print_warning "Could not update $src; building the existing checkout"
+    elif ! git clone https://github.com/salamaashoush/bolt.git "$src"; then
+        FAILED_PACKAGES+=("bolt (clone)")
+        return 0
+    fi
+
+    print_info "Building Bolt. If macOS asks to trust \"Bolt Self-Signed\" or to let codesign use its key, approve it and choose Always Allow."
+    if ! make -C "$src" install; then
+        FAILED_PACKAGES+=("bolt (build)")
+        return 0
+    fi
+
+    disable_spotlight_shortcut
+    open -a Bolt || true
+    print_success "Bolt installed: Cmd+Space or Option+Space"
+    print_info "Window management needs Accessibility: System Settings > Privacy & Security > Accessibility > Bolt"
+}
+
+# Bolt registers Cmd+Space, which macOS keeps for Spotlight while Spotlight's
+# shortcut is on. Symbolic hotkey 64 is "Show Spotlight search"; turn it back on
+# under System Settings > Keyboard > Keyboard Shortcuts > Spotlight.
+disable_spotlight_shortcut() {
+    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 \
+        "<dict><key>enabled</key><false/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>1048576</integer></array><key>type</key><string>standard</string></dict></dict>"
+    # Applies the change without logging out where this private helper exists
+    /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null || true
+    print_info "Spotlight's Cmd+Space is off so Bolt can use it (takes effect at next login if not immediately)"
 }
 
 # ==========================================
@@ -2242,7 +2331,7 @@ setup_macos_shortcuts() {
 
     # Global shortcuts for apps
     defaults write -g NSUserKeyEquivalents -dict-add "Open Kitty" "@~t"
-    defaults write -g NSUserKeyEquivalents -dict-add "Open Visual Studio Code" "@~c"
+    defaults write -g NSUserKeyEquivalents -dict-add "Open Zed" "@~c"
     defaults write -g NSUserKeyEquivalents -dict-add "Open Finder" "@~f"
     defaults write -g NSUserKeyEquivalents -dict-add "Open Google Chrome" "@~b"
 
@@ -2254,7 +2343,7 @@ setup_macos_shortcuts() {
 
     print_info "macOS shortcuts configured:"
     print_info "  Cmd+Opt+T → Kitty Terminal"
-    print_info "  Cmd+Opt+C → VS Code"
+    print_info "  Cmd+Opt+C → Zed"
     print_info "  Cmd+Opt+F → Finder"
     print_info "  Cmd+Opt+B → Browser"
     print_info "  Ctrl+Up/Down/Left/Right → Mission Control"
@@ -2278,7 +2367,7 @@ setup_plasma_shortcuts() {
     if command_exists "$kwrite_cmd"; then
         # Application shortcuts - use kwriteconfig with desktop file as group name
         "$kwrite_cmd" --file kglobalshortcutsrc --group "com.mitchellh.ghostty.desktop" --key _launch "Ctrl+Alt+T,Ctrl+Alt+T,Launch Ghostty"
-        "$kwrite_cmd" --file kglobalshortcutsrc --group "code.desktop" --key _launch "Ctrl+Alt+C,Ctrl+Alt+C,Launch VS Code"
+        "$kwrite_cmd" --file kglobalshortcutsrc --group "dev.zed.Zed.desktop" --key _launch "Ctrl+Alt+C,Ctrl+Alt+C,Launch Zed"
         "$kwrite_cmd" --file kglobalshortcutsrc --group "org.kde.dolphin.desktop" --key _launch "Ctrl+Alt+F,Ctrl+Alt+F,Launch Dolphin"
         "$kwrite_cmd" --file kglobalshortcutsrc --group "google-chrome.desktop" --key _launch "Ctrl+Alt+B,Ctrl+Alt+B,Launch Chrome"
         "$kwrite_cmd" --file kglobalshortcutsrc --group "org.kde.plasma-systemmonitor.desktop" --key _launch "Ctrl+Alt+M,Ctrl+Alt+M,Launch System Monitor"
@@ -2317,7 +2406,7 @@ setup_plasma_shortcuts() {
         print_info "KDE Plasma shortcuts configured:"
         print_info "  F12        → Dropdown Terminal"
         print_info "  Ctrl+Alt+T → Terminal"
-        print_info "  Ctrl+Alt+C → VS Code"
+        print_info "  Ctrl+Alt+C → Zed"
         print_info "  Ctrl+Alt+F → File Manager"
         print_info "  Alt+Space  → KRunner/Rofi"
         print_info "  Meta+Arrows → Window Tiling"
@@ -2354,11 +2443,9 @@ EOF
 #### macOS Shortcuts
 
 **System**
-- `Cmd+Space` → Raycast (app launcher)
+- `Cmd+Space` / `Option+Space` → Bolt (launcher, clipboard history, window management)
 - `Cmd+Opt+T` → Ghostty Terminal
-- `Cmd+Opt+C` → VS Code
-- `Cmd+Opt+V` → Clipboard History
-- `Cmd+Opt+E` → Emoji Picker
+- `Cmd+Opt+C` → Zed
 
 **Window Management (Rectangle)**
 - `Ctrl+Opt+Left` → Left half
@@ -2379,7 +2466,7 @@ EOF
 
 **Applications**
 - `Ctrl+Alt+T` → Ghostty Terminal
-- `Ctrl+Alt+C` → VS Code
+- `Ctrl+Alt+C` → Zed
 - `Ctrl+Alt+F` → File Manager
 - `Ctrl+Alt+B` → Browser
 - `Ctrl+Alt+M` → System Monitor
@@ -2415,12 +2502,12 @@ EOF
 - `Ctrl+Shift+C` → Copy
 - `Ctrl+Shift+V` → Paste
 
-### Editor Shortcuts (VS Code)
+### Editor Shortcuts (Zed)
 
 - `Cmd/Ctrl+P` → Quick file open
 - `Cmd/Ctrl+Shift+P` → Command palette
-- `Cmd/Ctrl+B` → Toggle sidebar
-- `Cmd/Ctrl+J` → Toggle terminal
+- `Cmd/Ctrl+B` → Toggle left dock
+- `Cmd/Ctrl+J` → Toggle bottom dock (terminal)
 - `F12` → Go to definition
 - `Shift+F12` → Find references
 
@@ -2460,6 +2547,8 @@ verify_installation() {
         "eza:Eza ls replacement"
         "zoxide:Zoxide smart cd"
         "starship:Starship prompt"
+        "mise:mise tool manager"
+        "herdr:herdr agent multiplexer"
     )
 
     print_info "Checking essential tools..."
@@ -2480,6 +2569,9 @@ verify_installation() {
         "bun:Bun runtime"
         "rustc:Rust compiler"
         "cargo:Cargo package manager"
+        "pnpm:pnpm"
+        "gh:GitHub CLI"
+        "claude:Claude Code"
         "docker:Docker"
     )
 
@@ -2505,8 +2597,8 @@ verify_installation() {
     # Check shell config
     echo ""
     print_info "Checking configurations..."
-    [[ -f "$HOME/.zshrc" ]] && print_success "~/.zshrc exists" || { print_error "~/.zshrc missing"; errors=$((errors + 1)); }
-    [[ -f "$HOME/.gitconfig" ]] && print_success "~/.gitconfig exists" || { print_error "~/.gitconfig missing"; errors=$((errors + 1)); }
+    [[ -f "$HOME/.zshrc" ]] && print_success "$HOME/.zshrc exists" || { print_error "$HOME/.zshrc missing"; errors=$((errors + 1)); }
+    [[ -f "$HOME/.gitconfig" ]] && print_success "$HOME/.gitconfig exists" || { print_error "$HOME/.gitconfig missing"; errors=$((errors + 1)); }
     [[ -f "$HOME/.config/starship.toml" ]] && print_success "starship.toml exists" || { print_warning "starship.toml missing"; warnings=$((warnings + 1)); }
     [[ -d "$HOME/.config/ghostty" ]] && print_success "Ghostty config exists" || { print_warning "Ghostty config missing"; warnings=$((warnings + 1)); }
 
@@ -2519,6 +2611,16 @@ verify_installation() {
     else
         print_warning "SSH key not found"
         warnings=$((warnings + 1))
+    fi
+
+    if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
+        echo ""
+        print_warning "Packages that failed to install:"
+        local pkg
+        for pkg in "${FAILED_PACKAGES[@]}"; do
+            print_warning "  $pkg"
+        done
+        warnings=$((warnings + ${#FAILED_PACKAGES[@]}))
     fi
 
     # Summary
@@ -2550,8 +2652,15 @@ main() {
         is_kde_plasma && print_info "KDE Plasma detected"
     fi
 
+    # Every path below is absolute. Working from $HOME keeps a project mise.toml
+    # in the caller's directory (this repo has one) from making each mise-managed
+    # tool the script runs stop at an untrusted-config error.
+    cd "$HOME"
+
     # Run all setup functions
+    keep_sudo_alive
     preflight_checks
+    collect_choices
     setup_mise
     setup_system_optimizations
     setup_terminal_and_shell
@@ -2562,6 +2671,7 @@ main() {
     setup_game_development
     setup_cachyos_tuning
     setup_advanced_tools
+    setup_bolt
     # DISABLED: Keyboard shortcuts - let user configure manually
     # setup_keyboard_shortcuts
 
@@ -2577,15 +2687,18 @@ main() {
     echo "  - C++ with CMake, Ninja, and modern toolchain"
     echo "  - Docker/Colima for containerization"
     echo "  - Full CLI toolkit (ripgrep, fzf, bat, eza, zoxide, etc.)"
+    echo "  - Claude Code and the herdr agent multiplexer"
+    echo "  - Runtimes, CLI tools, and Claude Code are managed by mise: 'mise up' upgrades them"
     echo "  - Gaming tools (Steam, Lutris, Wine on Linux)"
     echo "  - Multiplayer hosting: firewall rules + gamenet diagnostics"
     echo "  - Productivity tools (Slack, Discord, 1Password)"
     echo
     echo "Next steps:"
     echo "  1. Restart your terminal (or run: exec zsh)"
-    echo "  2. Add SSH key to GitHub: gh ssh-key add ~/.ssh/id_ed25519.pub"
-    echo "  3. Test Docker: docker run hello-world"
-    is_arch_linux && echo "  4. Reboot for gaming optimizations to take effect"
+    echo "  2. Sign in to GitHub and add your SSH key: gh auth login && gh ssh-key add ~/.ssh/id_ed25519.pub"
+    echo "  3. Sign in to Claude Code: claude"
+    echo "  4. Test Docker: docker run hello-world"
+    is_arch_linux && echo "  5. Reboot for gaming optimizations to take effect"
     echo
     echo "Useful commands:"
     echo "  - cheat       : Show all aliases and shortcuts"
@@ -2594,11 +2707,13 @@ main() {
     echo "  - frg <term>  : Ripgrep with fzf preview"
     echo "  - lg          : Lazygit"
     echo "  - y           : Yazi file manager"
+    echo "  - herdr       : Agent multiplexer (prefix Ctrl+Space)"
     echo "  - gamenet check <port> : Diagnose multiplayer connectivity"
     echo
     print_info "Happy coding!"
 
-    # Ask to reboot
+    # Ask to reboot. macOS picks everything up in a new terminal.
+    is_linux || return 0
     echo
     print_info "A reboot is recommended to apply all changes (Docker group, KDE shortcuts, etc.)"
     echo
