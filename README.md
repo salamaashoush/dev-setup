@@ -19,7 +19,7 @@ hands over to `install.sh`. Use `bash -c "$(curl ...)"` as shown, not
 `curl ... | bash`: the installer asks questions, and a piped script has no
 terminal to ask them on.
 
-The one-liner needs the repository to be public. For a private copy, get the
+Without network access to GitHub's raw files (or for a private fork), get the
 repository onto the machine any other way and run:
 
 ```bash
@@ -32,10 +32,9 @@ command applies.
 
 `install.sh` asks everything at the start: your Git name and email, an SSH key
 passphrase, whether to install game development tools, whether to set up
-agent-kit, and on Linux whether to install gaming packages. If agent-kit is on,
-a GitHub sign-in opens in the browser a minute later. After that it runs unattended and ends with a summary
-that lists any package that failed to install. Re-running it is safe and
-updates everything in place.
+agent-kit, and on Linux whether to install gaming packages. After that it runs
+unattended and ends with a summary that lists any package that failed to
+install. Re-running it is safe and updates everything in place.
 
 ## What you get
 
@@ -60,7 +59,7 @@ Line Tools on macOS and `base-devel`/clang on Linux, where mold is also set up
 as the Rust linker.
 
 **AI.** Claude Code, plus the herdr integration that lets herdr resume Claude
-sessions. No other agent is installed. With a GitHub sign-in (asked up front),
+sessions. No other agent is installed. Unless you opt out up front,
 [agent-kit](https://github.com/salamaashoush/agent-kit) is cloned to
 `~/Workspace/agent-kit` and installed: global instructions, hooks and skills,
 with rtk and ferridriver (both from mise) wired in. An existing clone there is

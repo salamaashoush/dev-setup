@@ -916,9 +916,8 @@ setup_mise() {
     cp -f "$CONFIGS_DIR/mise/config.toml" "$HOME/.config/mise/conf.d/dev-setup.toml"
 
 
-    # gh first, so the GitHub sign-in comes now rather than after the long installs
     "$mise_cmd" install gh || true
-    github_sign_in
+    use_github_token
 
     print_info "Installing runtimes, CLI tools, and Claude Code with mise..."
     if ! "$mise_cmd" install; then
@@ -936,19 +935,11 @@ setup_mise() {
     print_success "Mise setup complete"
 }
 
-# agent-kit is a private repository, so cloning it needs a signed-in gh. Its
-# token also lifts the anonymous GitHub API limit (60 requests an hour) that
-# mise's release lookups would otherwise run into.
-github_sign_in() {
-    command_exists gh || return 0
-    if ! gh auth status &>/dev/null; then
-        [[ "$INSTALL_AGENT_KIT" == true ]] || return 0
-        print_info "Sign in to GitHub in the browser (agent-kit is a private repository)..."
-        if ! gh auth login --hostname github.com --git-protocol https --web; then
-            print_warning "GitHub sign-in failed; agent-kit will be skipped"
-            return 0
-        fi
-    fi
+# A gh that is already signed in (bootstrap.sh signs in when it had to clone a
+# private copy) lends its token to mise, lifting the anonymous GitHub API limit
+# of 60 requests an hour that its release lookups would otherwise run into.
+use_github_token() {
+    command_exists gh && gh auth status &>/dev/null || return 0
     GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token)}"
     export GITHUB_TOKEN
 }
@@ -1442,7 +1433,7 @@ collect_choices() {
     echo
     [[ $REPLY =~ ^[Yy]$ ]] && INSTALL_GAMEDEV=true
 
-    read -p "Set up agent-kit (Claude Code instructions, hooks, skills; needs a GitHub sign-in)? [Y/n] " -n 1 -r
+    read -p "Set up agent-kit (Claude Code instructions, hooks and skills)? [Y/n] " -n 1 -r
     echo
     [[ $REPLY =~ ^[Nn]$ ]] && INSTALL_AGENT_KIT=false
 
@@ -1900,13 +1891,7 @@ setup_agent_kit() {
     local dir="$HOME/Workspace/agent-kit"
 
     if [[ ! -d "$dir/.git" ]]; then
-        if ! command_exists gh || ! gh auth status &>/dev/null; then
-            print_warning "agent-kit skipped: GitHub is not signed in. Later run:"
-            print_warning "  gh auth login && gh repo clone salamaashoush/agent-kit ~/Workspace/agent-kit && ~/Workspace/agent-kit/install.sh"
-            FAILED_PACKAGES+=("agent-kit (GitHub not signed in)")
-            return 0
-        fi
-        gh repo clone salamaashoush/agent-kit "$dir" || { FAILED_PACKAGES+=("agent-kit (clone)"); return 0; }
+        git clone https://github.com/salamaashoush/agent-kit.git "$dir" || { FAILED_PACKAGES+=("agent-kit (clone)"); return 0; }
     fi
 
     # Its installer needs Python 3.11+, which python3 resolves to through the mise shims

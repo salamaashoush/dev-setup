@@ -249,7 +249,7 @@ claude --help
 claude "explain this code"
 ```
 
-**agent-kit**: when you sign in to GitHub during setup, `install.sh` clones [agent-kit](https://github.com/salamaashoush/agent-kit) to `~/Workspace/agent-kit` and runs its installer. It links the global `CLAUDE.md`, skills and hooks into `~/.claude`, merges its settings, and wires rtk (command-output filter hook) and ferridriver (browser MCP server), which mise installs. `~/Workspace/agent-kit/install.sh --doctor` shows what is wired; edits in the clone take effect immediately.
+**agent-kit**: unless you opt out during setup, `install.sh` clones [agent-kit](https://github.com/salamaashoush/agent-kit) to `~/Workspace/agent-kit` and runs its installer. It links the global `CLAUDE.md`, skills and hooks into `~/.claude`, merges its settings, and wires rtk (command-output filter hook) and ferridriver (browser MCP server), which mise installs. `~/Workspace/agent-kit/install.sh --doctor` shows what is wired; edits in the clone take effect immediately.
 
 ## Communication
 
