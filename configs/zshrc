@@ -18,6 +18,40 @@
 typeset -U fpath
 
 # ===========================================
+# Cached tool init
+# ===========================================
+# brew, mise, starship, zoxide, direnv, fzf and vivid each print a static init
+# script. Spawning all of them costs more than the rest of startup combined on
+# macOS (brew shellenv alone runs a bash script), so source a cached copy. The
+# cache is keyed on the resolved binary's path, inode, size and mtime: an
+# upgrade moves the path (mise, Homebrew) or replaces the file (pacman,
+# self-update), and either rebuilds it. `rm -rf ~/.cache/zsh` forces a rebuild.
+#
+# Usage: _cached_source <cache-name> <binary> <command...>
+# Everything here is builtins: a $(...) would fork and cost what the cache saves.
+zmodload -F zsh/stat b:zstat
+_zcache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+
+_cached_source() {
+  local name=$1 bin=$2
+  shift 2
+  if [[ $bin == /* ]]; then bin=${bin:A}; else bin=${commands[$bin]:A}; fi
+  [[ -x $bin ]] || return 1
+
+  local cache="$_zcache_dir/$name.zsh" key want=""
+  local -A st
+  zstat -H st -- $bin || return 1
+  key="$bin $st[inode] $st[size] $st[mtime]"
+  [[ -r $cache.key ]] && read -r want < $cache.key
+  if [[ ! -s $cache || $want != $key ]]; then
+    mkdir -p $_zcache_dir
+    "$@" >| $cache 2>/dev/null || { rm -f $cache $cache.key; return 1 }
+    print -r -- $key >| $cache.key
+  fi
+  source $cache
+}
+
+# ===========================================
 # Zinit Plugin Manager
 # ===========================================
 
@@ -59,7 +93,11 @@ export CARGO_HOME="$HOME/.cargo"
 export RUSTUP_HOME="$HOME/.rustup"
 
 # Android SDK (optional)
-export ANDROID_HOME="$HOME/Android/Sdk"
+if [[ "$OSTYPE" == darwin* ]]; then
+    export ANDROID_HOME="$HOME/Library/Android/sdk"
+else
+    export ANDROID_HOME="$HOME/Android/Sdk"
+fi
 export NDK_HOME="$ANDROID_HOME/ndk"
 
 # XDG directories
@@ -72,6 +110,16 @@ export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 # ===========================================
 
 typeset -U path PATH  # Automatically removes duplicates
+
+# Homebrew lives in /opt/homebrew on Apple Silicon and /usr/local on Intel.
+# shellenv also puts brew's zsh completions on fpath. Loaded before the block
+# below so mise and user paths still win over brew.
+if [[ "$OSTYPE" == darwin* ]]; then
+    for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+        [[ -x $_brew ]] && { _cached_source brew-shellenv $_brew $_brew shellenv; break }
+    done
+    unset _brew
+fi
 
 path=(
     # Mise managed tools (highest priority)
@@ -91,25 +139,11 @@ path=(
     $path
 )
 
-# Platform-specific PATH
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    path=(
-        "/opt/homebrew/bin"
-        "/opt/homebrew/sbin"
-        $path
-    )
-fi
-
 export PATH
 
 # ===========================================
 # Zinit Plugins
 # ===========================================
-
-# Load annexes
-zinit light-mode for \
-    zdharma-continuum/zinit-annex-bin-gem-node \
-    zdharma-continuum/zinit-annex-patch-dl
 
 # Essential plugins with turbo mode. `zicompinit; zicdreplay` is the single
 # source of compinit + compdef replay for the whole config (runs after the
@@ -120,17 +154,22 @@ zinit wait lucid light-mode for \
     atload"_zsh_autosuggest_start" \
         zsh-users/zsh-autosuggestions \
     blockf atpull'zinit creinstall -q .' \
-        zsh-users/zsh-completions
+        zsh-users/zsh-completions \
+    OMZP::sudo
 
-# OMZ snippets
-zinit snippet OMZL::git.zsh
-zinit snippet OMZP::git
-zinit snippet OMZP::sudo
+# Loaded before mise below, which wraps whatever command_not_found_handler
+# exists at activation; a later definition would replace mise's.
 zinit snippet OMZP::command-not-found
 
-# Conditional plugins
-command -v docker &>/dev/null && zinit snippet OMZP::docker
-command -v kubectl &>/dev/null && zinit snippet OMZP::kubectl
+# Git and docker aliases live in aliases.sh. OMZ's git and docker plugins are
+# not loaded: they define ~250 aliases, several of which mean something else
+# there (OMZ gst is `git status`, ours is `git stash`).
+
+# Autosuggestions: fetch in the background so typing never waits on history,
+# and skip suggestions for long pasted buffers
+ZSH_AUTOSUGGEST_USE_ASYNC=1
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=40
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#565f89'
 
 # ===========================================
 # History Configuration
@@ -147,10 +186,9 @@ setopt HIST_IGNORE_ALL_DUPS      # Delete old recorded duplicates
 setopt HIST_FIND_NO_DUPS         # Don't display duplicates
 setopt HIST_IGNORE_SPACE         # Don't record lines starting with space
 setopt HIST_SAVE_NO_DUPS         # Don't write duplicates
-setopt SHARE_HISTORY             # Share history between sessions
+setopt SHARE_HISTORY             # Share history between sessions (appends as you go)
 setopt HIST_REDUCE_BLANKS        # Remove superfluous blanks
 setopt HIST_VERIFY               # Edit recalled history line before running
-setopt INC_APPEND_HISTORY        # Add commands immediately
 
 # ===========================================
 # Shell Options
@@ -171,13 +209,22 @@ setopt NO_FLOW_CONTROL           # Free up ctrl-s / ctrl-q
 
 bindkey -e  # Emacs keybindings
 
-bindkey '^[[A' history-search-backward    # Up arrow
-bindkey '^[[B' history-search-forward     # Down arrow
+# Up/Down search history for lines starting with what is already typed
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search    # Up arrow
+bindkey '^[OA' up-line-or-beginning-search    # Up arrow (application mode)
+bindkey '^[[B' down-line-or-beginning-search  # Down arrow
+bindkey '^[OB' down-line-or-beginning-search  # Down arrow (application mode)
+
 bindkey '^[[H' beginning-of-line          # Home
 bindkey '^[[F' end-of-line                # End
 bindkey '^[[3~' delete-char               # Delete
 bindkey '^[[1;5C' forward-word            # Ctrl+Right
 bindkey '^[[1;5D' backward-word           # Ctrl+Left
+bindkey '^[[1;3C' forward-word            # Alt/Option+Right
+bindkey '^[[1;3D' backward-word           # Alt/Option+Left
 bindkey '^H' backward-kill-word           # Ctrl+Backspace
 
 # ===========================================
@@ -186,12 +233,14 @@ bindkey '^H' backward-kill-word           # Ctrl+Backspace
 # compinit itself runs once via `zicompinit` in the turbo block above (after
 # the first prompt). Only completion styling lives here -- zstyles are plain
 # settings read by the completion system whenever it loads, so order is fine.
+# list-colors is set after vivid below, since it copies LS_COLORS when set.
 
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # Case insensitive
-zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' group-name ''
-zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
+zstyle ':completion:*:descriptions' format '%F{blue}-- %d --%f'
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path "$_zcache_dir/compcache"
 
 # Compile the dump in the background after it exists, so future starts are fast.
 {
@@ -211,10 +260,10 @@ zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
 # Shell Functions
 # ===========================================
 
-# Reload the shell cleanly. Re-sourcing .zshrc is unsafe: zinit, the eval-based
-# tool hooks (starship/zoxide/direnv/mise/fzf) and OMZ's deferred precmd hooks
-# all assume one-shot init and stack state on re-source. A fresh exec is clean
-# and, thanks to the fpath guard at the top, instant and error-free.
+# Reload the shell cleanly. Re-sourcing .zshrc is unsafe: zinit and the
+# eval-based tool hooks (starship/zoxide/direnv/mise/fzf) assume one-shot init
+# and stack state on re-source. A fresh exec is clean and, thanks to the fpath
+# guard at the top, instant and error-free.
 reload() {
     exec zsh
 }
@@ -251,12 +300,13 @@ extract() {
         *.zip)            unzip -- "$1" ;;
         *.rar)            unrar x -- "$1" ;;
         *.7z)             7z x -- "$1" ;;
+        *.Z)              uncompress -- "$1" ;;
         *) print -u2 "extract: don't know how to extract '$1'"; return 1 ;;
     esac
 }
 
 # fzf-powered widgets (only when fzf is present)
-if command -v fzf &>/dev/null; then
+if (( $+commands[fzf] )); then
     # Checkout a git branch (local or remote) via fuzzy picker.
     fco() {
         local branch
@@ -278,24 +328,28 @@ if command -v fzf &>/dev/null; then
         [[ -n $file ]] && "${EDITOR:-nvim}" "+${line}" "$file"
     }
 
-    # Pick process(es) and kill them.
+    # Pick process(es) and kill them (SIGTERM unless a signal is given).
     fkill() {
         local pid
         pid=$(ps -ef | sed 1d | fzf --multi --header='[kill:process]' | awk '{print $2}') || return
         [[ -n $pid ]] && print "$pid" | xargs kill "-${1:-15}"
     }
 
-    # cd into a directory chosen by fzf (fd-backed).
+    # cd into a directory picked by fzf: zoxide's frecent dirs, else fd.
     fcd() {
         local dir
-        dir=$(fd --type d --hidden --follow --exclude .git 2>/dev/null \
-            | fzf --preview 'eza --tree --level=2 --color=always --icons {}') || return
+        if (( $+commands[zoxide] )); then
+            dir=$(zoxide query -l | fzf --preview 'eza --tree --level=2 --color=always --icons {} 2>/dev/null') || return
+        else
+            dir=$(fd --type d --hidden --follow --exclude .git 2>/dev/null \
+                | fzf --preview 'eza --tree --level=2 --color=always --icons {} 2>/dev/null') || return
+        fi
         [[ -n $dir ]] && cd -- "$dir"
     }
 fi
 
 # lazygit on ctrl-g (opens, restores prompt cleanly on exit)
-if command -v lazygit &>/dev/null; then
+if (( $+commands[lazygit] )); then
     _lazygit_widget() { lazygit; zle reset-prompt }
     zle -N _lazygit_widget
     bindkey '^g' _lazygit_widget
@@ -304,56 +358,58 @@ fi
 # ===========================================
 # Tool Initialization
 # ===========================================
-# These register precmd/preexec/zle hooks via eval; re-running them in the same
-# process stacks duplicate hooks. Gate behind a one-shot sentinel so a manual
+# These register precmd/preexec/zle hooks; re-running them in the same process
+# stacks duplicate hooks. Gate behind a one-shot sentinel so a manual
 # `source ~/.zshrc` stays harmless (use `reload` for a real clean restart).
 if [[ -z $_TOOL_HOOKS_INIT ]]; then
-    # Starship prompt
-    command -v starship &>/dev/null && eval "$(starship init zsh)"
+    # Mise first: activation puts the real install dirs on PATH, so the tools
+    # initialised below resolve to binaries rather than shims.
+    _mise=mise
+    [[ -x "$HOME/.local/bin/mise" ]] && _mise="$HOME/.local/bin/mise"
+    _cached_source mise-activate $_mise $_mise activate zsh
+    unset _mise
 
-    # Zoxide (smart cd) - use 'z' to jump, 'zi' for interactive; 'cd' untouched
-    command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
-
-    # Direnv
-    command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
-
-    # Mise version manager
-    if [[ -f "$HOME/.local/bin/mise" ]]; then
-        eval "$("$HOME/.local/bin/mise" activate zsh)"
-    elif command -v mise &>/dev/null; then
-        eval "$(mise activate zsh)"
+    # Starship prompt. It also sets RPROMPT, which would spawn starship a second
+    # time on every prompt; starship.toml has no right_format, so drop it.
+    if _cached_source starship starship starship init zsh --print-full-init; then
+        unset RPROMPT
     fi
 
-    # FZF - fuzzy finder with integrations
-    if command -v fzf &>/dev/null; then
-        source <(fzf --zsh 2>/dev/null) || eval "$(fzf --zsh)"
+    # Zoxide (smart cd) - use 'z' to jump, 'zi' for interactive; 'cd' untouched
+    _cached_source zoxide zoxide zoxide init zsh
 
-        # FZF theme (Tokyo Night Storm)
+    # Direnv
+    _cached_source direnv direnv direnv hook zsh
+
+    # FZF - fuzzy finder with integrations
+    if _cached_source fzf fzf fzf --zsh; then
+        # Tokyo Night Storm, from folke/tokyonight.nvim extras/fzf
         export FZF_DEFAULT_OPTS="
             --height 50%
             --layout=reverse
             --border=rounded
-            --info=inline
+            --info=inline-right
+            --highlight-line
             --marker='▶'
             --pointer='▶'
             --prompt='❯ '
-            --color=bg+:#293739,bg:#1d2021,spinner:#9ece6a,hl:#7aa2f7
-            --color=fg:#c0caf5,header:#7aa2f7,info:#e0af68,pointer:#9ece6a
-            --color=marker:#9ece6a,fg+:#c0caf5,prompt:#7aa2f7,hl+:#7aa2f7
-            --color=border:#565f89
+            --color=bg+:#2e3c64,bg:#1f2335,gutter:#1f2335,border:#29a4bd
+            --color=fg:#c0caf5,hl:#2ac3de,hl+:#2ac3de,query:#c0caf5:regular
+            --color=header:#ff9e64,info:#545c7e,separator:#ff9e64,scrollbar:#29a4bd
+            --color=marker:#ff007c,pointer:#ff007c,prompt:#2ac3de,spinner:#ff007c
             --bind=ctrl-d:half-page-down,ctrl-u:half-page-up
             --bind=ctrl-y:preview-up,ctrl-e:preview-down
         "
 
         # Use fd for FZF if available (faster than find)
-        if command -v fd &>/dev/null; then
+        if (( $+commands[fd] )); then
             export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
             export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
             export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git --exclude node_modules --exclude .venv'
         fi
 
         # Ctrl+T preview with bat (syntax highlighted)
-        if command -v bat &>/dev/null; then
+        if (( $+commands[bat] )); then
             export FZF_CTRL_T_OPTS="
                 --preview 'bat --style=numbers --color=always --line-range :500 {} 2>/dev/null || cat {}'
                 --preview-window=right:60%:wrap
@@ -362,35 +418,39 @@ if [[ -z $_TOOL_HOOKS_INIT ]]; then
         fi
 
         # Alt+C preview with eza (directory tree)
-        if command -v eza &>/dev/null; then
+        if (( $+commands[eza] )); then
             export FZF_ALT_C_OPTS="
                 --preview 'eza --tree --level=2 --color=always --icons {} 2>/dev/null'
                 --preview-window=right:50%
             "
         fi
 
-        # Ctrl+R history search with preview
+        # Ctrl+R history search with preview; Ctrl+Y copies the command
+        _clip='xclip -selection clipboard'
+        [[ -n $WAYLAND_DISPLAY ]] && _clip=wl-copy
+        [[ "$OSTYPE" == darwin* ]] && _clip=pbcopy
         export FZF_CTRL_R_OPTS="
             --preview 'echo {}'
             --preview-window=down:3:wrap
-            --bind='ctrl-y:execute-silent(echo -n {2..} | ${WAYLAND_DISPLAY:+wl-copy}${WAYLAND_DISPLAY:-xclip -selection clipboard})+abort'
+            --bind='ctrl-y:execute-silent(echo -n {2..} | $_clip)+abort'
         "
+        unset _clip
     fi
 
-    # Vivid LS_COLORS
-    if command -v vivid &>/dev/null; then
-        if LS_COLORS="$(vivid generate tokyonight-storm 2>/dev/null || vivid generate molokai 2>/dev/null)"; then
-            export LS_COLORS
-        fi
-    fi
-
-    # GitHub Copilot CLI (only if authenticated)
-    if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
-        eval "$(gh copilot alias -- zsh 2>/dev/null)" || true
-    fi
+    # Vivid LS_COLORS (theme from ~/.config/vivid/themes, else a built-in).
+    # install.sh drops the cache keys when it updates the theme file.
+    _vivid_ls_colors() {
+        local colors
+        colors=$(vivid generate tokyonight-storm 2>/dev/null || vivid generate molokai) || return
+        print -r -- "export LS_COLORS=${(q)colors}"
+    }
+    _cached_source vivid vivid _vivid_ls_colors
+    unfunction _vivid_ls_colors
 
     typeset -g _TOOL_HOOKS_INIT=1
 fi
+
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 
 # Bun completions
 [[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
@@ -399,9 +459,8 @@ fi
 # Finalize
 # ===========================================
 
-# OMZL::git appends _defer_async_git_register straight into precmd_functions
-# without dedup, so a manual re-source would stack it. Keep the hook arrays
-# unique. (compdef replay is handled by `zicdreplay` in the turbo block above.)
+# Keep the hook arrays unique so a manual re-source cannot stack entries.
+# (compdef replay is handled by `zicdreplay` in the turbo block above.)
 typeset -U precmd_functions preexec_functions chpwd_functions
 
 # Load local, machine-specific overrides (kept out of version control)

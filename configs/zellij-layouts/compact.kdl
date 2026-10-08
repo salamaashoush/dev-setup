@@ -1,9 +1,0 @@
-// Compact Layout - Minimal UI with just tabs
-// Usage: zellij --layout compact
-
-layout {
-    pane size=1 borderless=true {
-        plugin location="zellij:compact-bar"
-    }
-    pane focus=true
-}

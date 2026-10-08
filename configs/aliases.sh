@@ -217,7 +217,8 @@ db-stop() {
 
 db-shell() {
     local name="${1:?Container name required}"
-    local image=$(docker inspect "$name" --format='{{.Config.Image}}' 2>/dev/null)
+    local image
+    image=$(docker inspect "$name" --format='{{.Config.Image}}' 2>/dev/null)
 
     case "$image" in
         *postgres*) docker exec -it "$name" psql -U postgres ;;
@@ -265,8 +266,8 @@ alias bnb='bun build'
 # ===========================================
 
 alias py='python3'
-alias pyp='python3 -m pip'
-alias pyvenv='python3 -m venv .venv'
+alias pyp='uv pip'
+alias pyvenv='uv venv'
 alias pyactivate='source .venv/bin/activate'
 
 # ===========================================
@@ -276,24 +277,17 @@ alias pyactivate='source .venv/bin/activate'
 alias yolo='claude --dangerously-skip-permissions'
 
 # ===========================================
-# Zellij (Terminal Multiplexer)
+# herdr (Agent Multiplexer)
 # ===========================================
 
-alias zj='zellij'
-alias zja='zellij attach'
-alias zjl='zellij list-sessions'
-alias zjk='zellij kill-session'
-alias zjka='zellij kill-all-sessions'
+alias hr='herdr'
+alias hrl='herdr session list'
+alias hra='herdr session attach'
+alias hrk='herdr session stop'
 
-# Quick layouts
-alias zjd='zellij --layout dev'
-alias zjw='zellij --layout work'
-alias zjc='zellij --layout compact'
-
-# Attach or create session
-zjs() {
-    local session="${1:-dev}"
-    zellij attach -c "$session"
+# Attach to a named session, creating it if needed
+hrs() {
+    herdr --session "${1:-dev}"
 }
 
 # ===========================================
@@ -320,7 +314,7 @@ fcd() {
               fzf --preview 'eza --tree --level=2 --color=always --icons {} 2>/dev/null' \
               --preview-window=right:50%)
     fi
-    [[ -n "$dir" ]] && cd "$dir"
+    [[ -n "$dir" ]] && { cd "$dir" || return; }
 }
 
 # fzf ripgrep integration - search content and open in editor
@@ -372,7 +366,7 @@ fdc() {
 
 # Create directory and cd into it
 mkcd() {
-    mkdir -p "$1" && cd "$1"
+    mkdir -p "$1" && { cd "$1" || return; }
 }
 
 # Extract archives
@@ -411,13 +405,14 @@ serve() {
 
 # Git clone and cd
 gclone() {
-    git clone "$1" && cd "$(basename "$1" .git)"
+    git clone "$1" && { cd "$(basename "$1" .git)" || return; }
 }
 
 # Kill process on port
 killport() {
     local port="${1:?Port number required}"
-    local pids=$(lsof -ti :"$port" 2>/dev/null)
+    local pids
+    pids=$(lsof -ti :"$port" 2>/dev/null)
     if [[ -n "$pids" ]]; then
         echo "Killing processes on port $port: $pids"
         kill -9 $pids
@@ -450,7 +445,7 @@ y() {
     if [[ -r "$tmp" ]]; then
         local cwd
         cwd="$(<"$tmp")"
-        [[ -n "$cwd" && "$cwd" != "$PWD" ]] && cd "$cwd"
+        [[ -n "$cwd" && "$cwd" != "$PWD" ]] && { cd "$cwd" || return; }
     fi
     rm -f "$tmp"
     trap - EXIT
@@ -465,7 +460,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     alias o='open'
     alias finder='open -a Finder .'
     alias copy='pbcopy'
-    alias paste='pbpaste'
 
     # Homebrew (using 'br' prefix to avoid conflict with bun)
     alias bri='brew install'
@@ -486,10 +480,8 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Clipboard (Wayland)
     if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
         alias copy='wl-copy'
-        alias paste='wl-paste'
     elif command -v xclip &>/dev/null; then
         alias copy='xclip -selection clipboard'
-        alias paste='xclip -selection clipboard -o'
     fi
 
     # Arch Linux package management
@@ -535,7 +527,7 @@ dev-cleanup() {
     # Development caches
     npm cache clean --force 2>/dev/null || true
     pnpm store prune 2>/dev/null || true
-    pip cache purge 2>/dev/null || true
+    uv cache clean 2>/dev/null || true
     cargo cache -a 2>/dev/null || true
 
     # Docker
@@ -756,7 +748,7 @@ EOF
 │                                                               │
 │  CLIPBOARD                                                    │
 │    copy      copy to clipboard                                │
-│    paste     paste from clipboard                             │
+│    pbpaste / wl-paste   paste from clipboard                  │
 │                                                               │
 │  MISC                                                         │
 │    o         open (xdg-open/open)                             │
@@ -776,8 +768,8 @@ EOF
 │                      PYTHON                                   │
 ├───────────────────────────────────────────────────────────────┤
 │    py          python3                                        │
-│    pyp         python3 -m pip                                 │
-│    pyvenv      python3 -m venv .venv                          │
+│    pyp         uv pip                                         │
+│    pyvenv      uv venv                                        │
 │    pyactivate  source .venv/bin/activate                      │
 ╰───────────────────────────────────────────────────────────────╯
 EOF
@@ -807,7 +799,7 @@ EOF
 │  DEV TOOLS                                                    │
 │    lazygit   git TUI                                          │
 │    yazi      file manager TUI                                 │
-│    zellij    terminal multiplexer                             │
+│    herdr     agent multiplexer                                │
 │    starship  shell prompt                                     │
 │    direnv    env per directory                                │
 │    mise      version manager                                  │
@@ -821,85 +813,50 @@ EOF
 ╰───────────────────────────────────────────────────────────────╯
 EOF
             ;;
-        zellij|zj|mux)
+        herdr|hr|mux)
             cat << 'EOF'
 ╭───────────────────────────────────────────────────────────────╮
-│                     ZELLIJ (Terminal Multiplexer)             │
+│                     HERDR (Agent Multiplexer)                 │
 ├───────────────────────────────────────────────────────────────┤
 │  STARTING                                                     │
-│    zellij                    Start new session                │
-│    zellij -s <name>          Start named session              │
-│    zellij a                  Attach to session                │
-│    zellij a -c <name>        Attach or create session         │
-│    zellij ls                 List sessions                    │
-│    zellij --layout dev       Start with dev layout            │
-│    zellij --layout work      Start with work layout           │
+│    herdr                     Launch or attach default session │
+│    hrs <name>                Attach or create named session   │
+│    hrl                       List sessions                    │
+│    hra <name>                Attach to session                │
+│    hrk <name>                Stop session                     │
 │                                                               │
 ├───────────────────────────────────────────────────────────────┤
-│  MODES (current config)                                       │
-│    Ctrl+p     Pane mode                                       │
-│    Ctrl+t     Tab mode                                        │
-│    Ctrl+n     Resize mode                                     │
-│    Ctrl+s     Scroll mode                                     │
-│    Ctrl+o     Session mode                                    │
-│    Ctrl+g/Esc Exit mode                                       │
-│                                                               │
-├───────────────────────────────────────────────────────────────┤
-│  QUICK KEYS (Normal mode - no prefix needed)                  │
-│    Ctrl+h/j/k/l    Navigate panes                             │
-│    Ctrl+d          New pane below                             │
-│    Ctrl+r          New pane right                             │
-│    Alt+n           New tab                                    │
-│    Alt+h/l         Previous/next tab                          │
-│    Alt+1-9         Go to tab 1-9                              │
-│                                                               │
-├───────────────────────────────────────────────────────────────┤
-│  PANE MODE (Ctrl+p)                                           │
-│    h/j/k/l    Navigate panes                                  │
-│    n          New pane                                        │
-│    d          New pane down                                   │
-│    r          New pane right                                  │
-│    x          Close pane                                      │
-│    f          Fullscreen toggle                               │
-│    w          Toggle floating                                 │
-│    z          Toggle frames                                   │
-│                                                               │
-├───────────────────────────────────────────────────────────────┤
-│  TAB MODE (Ctrl+t)                                            │
-│    n          New tab                                         │
-│    x          Close tab                                       │
-│    h/l        Previous/next tab                               │
-│    r          Rename tab                                      │
-│    s          Sync tab (type in all panes)                    │
-│    1-9        Go to tab                                       │
-│                                                               │
-├───────────────────────────────────────────────────────────────┤
-│  RESIZE MODE (Ctrl+n)                                         │
-│    h/j/k/l    Increase size                                   │
-│    H/J/K/L    Decrease size                                   │
-│    +/=        Increase all                                    │
-│    -          Decrease all                                    │
-│                                                               │
-├───────────────────────────────────────────────────────────────┤
-│  SCROLL MODE (Ctrl+s)                                         │
-│    j/k        Scroll down/up                                  │
-│    d/u        Half page down/up                               │
-│    Ctrl+f/b   Page down/up                                    │
-│    s          Search                                          │
-│    e          Edit scrollback in nvim                         │
-│                                                               │
-├───────────────────────────────────────────────────────────────┤
-│  SESSION MODE (Ctrl+o)                                        │
+│  PREFIX  Ctrl+Space   (bindings follow tmux)                  │
+│    ?          Help                                            │
 │    d          Detach                                          │
-│    w          Session manager                                 │
+│    q          Reload config                                   │
+│    [          Copy mode                                       │
 │                                                               │
 ├───────────────────────────────────────────────────────────────┤
-│  LAYOUTS                                                      │
-│    dev        Editor (70%) + terminal + git                   │
-│    work       Multiple tabs (editor/term/git/logs)            │
-│    compact    Minimal UI                                      │
+│  PANES                                                        │
+│    prefix h / Alt+Enter          Split horizontally           │
+│    prefix v / Alt+Shift+Enter    Split vertically             │
+│    prefix x / Alt+Esc            Close pane                   │
+│    prefix z                      Zoom                         │
+│    prefix ;                      Last pane                    │
+│    Ctrl+Alt+Arrows               Focus pane                   │
+│    Ctrl+Alt+Shift+Arrows         Resize pane                  │
 │                                                               │
-│  Ctrl+q      Quit zellij                                      │
+├───────────────────────────────────────────────────────────────┤
+│  TABS                                                         │
+│    prefix c                      New tab                      │
+│    prefix r                      Rename tab                   │
+│    prefix k                      Close tab                    │
+│    prefix 1-9 / Alt+1-9          Go to tab                    │
+│    prefix p,n / Alt+Left,Right   Previous/next tab            │
+│    Alt+Shift+Left,Right          Move tab                     │
+│                                                               │
+├───────────────────────────────────────────────────────────────┤
+│  WORKSPACES                                                   │
+│    prefix Shift+c                New workspace                │
+│    prefix Shift+r                Rename workspace             │
+│    prefix Shift+k                Close workspace              │
+│    prefix Shift+p,n              Previous/next workspace      │
 ╰───────────────────────────────────────────────────────────────╯
 EOF
             ;;
@@ -919,7 +876,7 @@ EOF
 │                                                               │
 ├───────────────────────────────────────────────────────────────┤
 │  APPLICATIONS                                                 │
-│    Ctrl+Alt+C      VS Code                                    │
+│    Ctrl+Alt+C      Zed                                        │
 │    Ctrl+Alt+F      Dolphin (File Manager)                     │
 │    Ctrl+Alt+B      Chrome browser                             │
 │    Ctrl+Alt+M      System Monitor                             │
@@ -1052,7 +1009,7 @@ EOF
 │    system, s    System monitoring and management              │
 │    python, py   Python commands                               │
 │    tools, t     All installed modern tools                    │
-│    zellij, zj   Zellij terminal multiplexer                   │
+│    herdr, hr    herdr agent multiplexer                       │
 │    kde, k       KDE shortcuts (Rofi, Ghostty, apps)           │
 │    gaming       Linux gaming (Steam, MangoHud, Proton)        │
 │    all          This help                                     │
@@ -1066,7 +1023,7 @@ EOF
 │  Docker:   d dc dcu dcd dps  db-start db-shell                │
 │  System:   bt pss dust duf  sc scu                            │
 │  Search:   rg sg frg batgrep  Ctrl+T Ctrl+R Alt+C             │
-│  Zellij:   Ctrl+p(pane) Ctrl+t(tab) Ctrl+n(resize)            │
+│  herdr:    Ctrl+Space prefix  Alt+Enter(split) Alt+1-9(tab)   │
 │  KDE:      F12(dropdown) Alt+Space(rofi) Alt+V(clip)          │
 ├───────────────────────────────────────────────────────────────┤
 │  Note: System commands (ls, cat, du, df, ping) are NOT        │
