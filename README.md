@@ -111,7 +111,9 @@ Colima uses it for x86_64 containers.
 mise installs everything its registry carries, so both platforms run the same
 versions. `~/.config/mise/config.toml` is a symlink to
 `configs/mise/config.toml`, so `mise use -g <tool>` edits the file in this
-repo and every machine gets the tool on its next pull.
+repo and every machine gets the tool on its next pull. `configs/mise/mise.lock`
+(linked the same way) pins each version with its checksum for macOS arm64 and
+Linux x64; `mise up` moves it forward.
 
 Homebrew and pacman keep what needs system integration or has no macOS arm64
 build in mise: zsh, git, eza, btop, Docker and Colima, a handful of network

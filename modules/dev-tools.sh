@@ -228,11 +228,29 @@ setup_development_tools() {
     fi
 
     # Dockside (https://github.com/salamaashoush/dockside), a desktop app for Docker,
-    # Colima and Kubernetes. Its installer fetches the latest release into
-    # /Applications on macOS or ~/.local/bin as an AppImage on Linux.
-    print_info "Installing Dockside..."
-    curl -fsSL https://raw.githubusercontent.com/salamaashoush/dockside/main/scripts/install.sh | bash \
-        || FAILED_PACKAGES+=("dockside")
+    # Colima and Kubernetes. Its installer puts the release in /Applications on
+    # macOS or ~/.local/bin as an AppImage on Linux.
+    # Pinned, installer and release alike, so a re-run cannot pick up an
+    # unreviewed script from main. The AppImage reports no version, hence the marker.
+    local dockside_version="v0.5.0"
+    local dockside_marker="${XDG_STATE_HOME:-$HOME/.local/state}/dev-setup/dockside-version"
+    local dockside_have=""
+    if is_macos; then
+        dockside_have=$(defaults read /Applications/Dockside.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null || true)
+        [[ -n "$dockside_have" ]] && dockside_have="v$dockside_have"
+    elif [[ -x "$HOME/.local/bin/dockside" && -f "$dockside_marker" ]]; then
+        dockside_have=$(<"$dockside_marker")
+    fi
+    if [[ "$dockside_have" != "$dockside_version" ]]; then
+        print_info "Installing Dockside $dockside_version..."
+        if curl -fsSL "https://raw.githubusercontent.com/salamaashoush/dockside/$dockside_version/scripts/install.sh" \
+            | bash -s -- "$dockside_version"; then
+            ensure_directory "$(dirname "$dockside_marker")"
+            echo "$dockside_version" > "$dockside_marker"
+        else
+            FAILED_PACKAGES+=("dockside")
+        fi
+    fi
 
     # REMOVED: Database GUI tools - use web-based tools instead
 

@@ -42,6 +42,9 @@ setup_mise() {
     fi
     rm -f "$mise_dir/conf.d/dev-setup.toml"
     ln -sfn "$CONFIGS_DIR/mise/config.toml" "$mise_dir/config.toml"
+    # mise reads and updates a lockfile that exists, so every machine installs
+    # the same versions with checksums; `mise up` moves it forward
+    link_config mise/mise.lock "$mise_dir/mise.lock"
 
 
     "$mise_cmd" install gh || true
