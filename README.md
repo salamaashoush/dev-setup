@@ -54,7 +54,8 @@ includes the Claude Code extra (`<leader>ac` toggles Claude).
 **Toolchains.** Node.js LTS, Bun, pnpm, yarn, Python with uv (`pyp` is
 `uv pip`, `pyvenv` is `uv venv`), Rust (with rust-analyzer, clippy,
 rustfmt and the wasm32 target), cargo-watch, cargo-nextest, bacon and friends,
-CMake, Ninja, just and sccache. C and C++ compilers come from the Xcode Command
+CMake, Ninja, just, sccache and mbx (mr boxington), which wraps Cargo so
+worktrees share one build cache. C and C++ compilers come from the Xcode Command
 Line Tools on macOS and `base-devel`/clang on Linux, where mold is also set up
 as the Rust linker.
 
@@ -96,9 +97,9 @@ Colima uses it for x86_64 containers.
 ## How tools are installed
 
 mise installs everything its registry carries, so both platforms run the same
-versions. `configs/mise/config.toml` is copied to
-`~/.config/mise/conf.d/dev-setup.toml`; mise merges that with your own
-`~/.config/mise/config.toml`, so tools you add with `mise use -g` stay yours.
+versions. `~/.config/mise/config.toml` is a symlink to
+`configs/mise/config.toml`, so `mise use -g <tool>` edits the file in this
+repo and every machine gets the tool on its next pull.
 
 Homebrew and pacman keep what needs system integration or has no macOS arm64
 build in mise: zsh, git, eza, btop, Docker and Colima, a handful of network
@@ -114,7 +115,8 @@ up `~/.zshrc`, `~/.gitconfig` and the Kitty config first, to
 `~/.dev-setup-backup/`). Keep personal changes where it never writes:
 
 - `~/.zshrc.local` for shell settings, sourced last
-- `~/.config/mise/config.toml` for extra tools (`mise use -g <tool>`)
+- `~/.config/mise/conf.d/local.toml` for tools only this machine should have
+  (`mise use --path ~/.config/mise/conf.d/local.toml <tool>`)
 - Neovim: an existing `~/.config/nvim` is left alone
 
 ## Repository layout

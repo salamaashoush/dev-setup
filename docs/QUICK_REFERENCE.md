@@ -160,7 +160,7 @@ sudo scx_lavd              # Latency-tuned scheduler for gaming
 - Zed: `~/.config/zed/settings.json`
 - Starship: `~/.config/starship.toml`
 - herdr: `~/.config/herdr/config.toml`
-- mise: `~/.config/mise/conf.d/dev-setup.toml`
+- mise: `~/.config/mise/config.toml` (symlink to `configs/mise/config.toml`), plus `~/.config/mise/conf.d/local.toml` for this machine's own tools
 
 ## 💡 Pro Tips
 

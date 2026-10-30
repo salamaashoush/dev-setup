@@ -185,7 +185,7 @@ zq proj       # Query database
 **Description**: An agent multiplexer that lives in your terminal ([herdr.dev](https://herdr.dev))  
 **Category**: Multiplexer  
 **Configuration**: `configs/herdr/config.toml` (installed to `~/.config/herdr/config.toml`)  
-**Install**: `mise use -g herdr`, skipped when a herdr is already on `PATH` (Omarchy ships it as a system package)
+**Install**: mise, into `~/.config/mise/conf.d/local.toml` because it is per machine, skipped when a herdr is already on `PATH` (Omarchy ships it as a system package)
 
 **Advantages over tmux**:
 - Keeps tmux bindings: session → workspace, window → tab, pane → pane

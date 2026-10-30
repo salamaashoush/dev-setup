@@ -912,8 +912,22 @@ setup_mise() {
         return 1
     fi
 
-    ensure_directory "$HOME/.config/mise/conf.d"
-    cp -f "$CONFIGS_DIR/mise/config.toml" "$HOME/.config/mise/conf.d/dev-setup.toml"
+    # The global config is a symlink into this repo, so `mise use -g` edits the
+    # versioned file. A config.toml that is a real file predates the symlink and
+    # holds this machine's own tools; it becomes conf.d/local.toml, which mise
+    # also loads.
+    local mise_dir="$HOME/.config/mise"
+    local mise_local="$mise_dir/conf.d/local.toml"
+    ensure_directory "$mise_dir/conf.d"
+    if [[ -f "$mise_dir/config.toml" && ! -L "$mise_dir/config.toml" ]]; then
+        if [[ -e "$mise_local" ]]; then
+            mv "$mise_local" "$mise_local.bak-$(date +%Y%m%d%H%M%S)"
+        fi
+        mv "$mise_dir/config.toml" "$mise_local"
+        print_info "Moved your own mise tools to $mise_local"
+    fi
+    rm -f "$mise_dir/conf.d/dev-setup.toml"
+    ln -sfn "$CONFIGS_DIR/mise/config.toml" "$mise_dir/config.toml"
 
 
     "$mise_cmd" install gh || true
@@ -929,7 +943,7 @@ setup_mise() {
     # Omarchy ships herdr as a system package; a mise copy earlier on PATH would
     # shadow it with a client that may not speak the packaged server's protocol.
     if ! command_exists herdr; then
-        "$mise_cmd" use --global herdr@latest || FAILED_PACKAGES+=("mise:herdr")
+        "$mise_cmd" use --path "$mise_local" herdr@latest || FAILED_PACKAGES+=("mise:herdr")
     fi
 
     print_success "Mise setup complete"

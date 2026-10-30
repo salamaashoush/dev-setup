@@ -28,6 +28,7 @@ Runtimes, build tools, and most developer CLIs come from mise (`configs/mise/con
 **Tools Installed** (mise):
 - **cargo-binstall**: Binary installation for faster setup
 - **sccache**: Shared compilation cache
+- **mbx** (mr boxington): Wraps Cargo (the `mr_boxington` rust option) so worktrees share one build cache with a disk budget
 - **cargo-watch**: Auto-rebuild on file changes
 - **cargo-edit**: Add/remove dependencies from CLI
 - **cargo-outdated**: Check for outdated dependencies
@@ -184,7 +185,7 @@ db-stop postgres       # stop and remove it
 
 ## Global Tools
 
-Global tools come from mise rather than `npm -g`, `pip install`, or `cargo install` (Python CLIs: `mise use -g pipx:<tool>`, installed through uv). `mise use -g <tool>` writes to `~/.config/mise/config.toml`, separate from the managed `conf.d/dev-setup.toml`, so it survives a re-run of `install.sh`.
+Global tools come from mise rather than `npm -g`, `pip install`, or `cargo install` (Python CLIs: `mise use -g pipx:<tool>`, installed through uv). `~/.config/mise/config.toml` is a symlink to `configs/mise/config.toml`, so `mise use -g <tool>` edits the repo file and survives a re-run of `install.sh`. Tools for one machine only go in `~/.config/mise/conf.d/local.toml` via `mise use --path`.
 
 ## Development Workflow Integration
 
@@ -200,6 +201,6 @@ Global tools come from mise rather than `npm -g`, `pip install`, or `cargo insta
 
 1. **Use version managers**: mise for runtimes and CLI tools
 2. **Isolate dependencies**: project virtual environments, per-project `mise.toml`
-3. **Cache builds**: sccache for Rust
+3. **Cache builds**: mbx for Rust, which plain `cargo` already goes through
 4. **Format consistently**: Configure formatters in each project
 5. **Lint early**: Pre-commit hooks catch issues before commit

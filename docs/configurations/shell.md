@@ -202,7 +202,7 @@ setopt SHARE_HISTORY
 _cached_source mise-activate mise mise activate zsh
 ```
 
-Node.js, Bun, Rust and the rest come from `~/.config/mise/conf.d/dev-setup.toml`.
+Node.js, Bun, Rust and the rest come from `~/.config/mise/config.toml`, a symlink to `configs/mise/config.toml`.
 
 ### Rust
 ```bash
