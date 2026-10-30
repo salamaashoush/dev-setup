@@ -85,8 +85,6 @@ source "$SCRIPT_DIR/modules/gaming.sh"
 source "$SCRIPT_DIR/modules/advanced.sh"
 # shellcheck source=modules/bolt.sh
 source "$SCRIPT_DIR/modules/bolt.sh"
-# shellcheck source=modules/shortcuts.sh
-source "$SCRIPT_DIR/modules/shortcuts.sh"
 # shellcheck source=modules/verify.sh
 source "$SCRIPT_DIR/modules/verify.sh"
 

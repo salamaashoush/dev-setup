@@ -161,7 +161,6 @@ Alt+F2            Alt+Tab               Ctrl+Alt+Esc
 
 ### Linux
 - KDE shortcuts configured via System Settings → Shortcuts
-- Rofi shortcuts defined in `~/.config/keyboard-shortcuts-reference.md`
 - Custom shortcuts can be added via KDE's Custom Shortcuts module
 
 ## Tips for Learning
