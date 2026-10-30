@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck and a current bash
+        run: |
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            brew install shellcheck bash
+          else
+            sudo apt-get update && sudo apt-get install -y shellcheck
+          fi
+      - name: Brewfile parses
+        if: runner.os == 'macOS'
+        run: brew bundle list --all --file Brewfile >/dev/null
+      - run: scripts/test-setup.sh

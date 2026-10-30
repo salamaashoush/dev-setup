@@ -113,6 +113,8 @@ STEPS=(
 )
 ONLY_STEPS=""
 SKIP_STEPS=""
+# Steps that never call sudo, so running only these asks for no password
+STEPS_WITHOUT_SUDO=",mise,dotfiles,git,verify,"
 
 usage() {
     cat <<EOF
@@ -151,6 +153,17 @@ check_step_list() {
     done
 }
 
+needs_sudo() {
+    local entry name
+    for entry in "${STEPS[@]}"; do
+        name="${entry%%:*}"
+        if step_selected "$name" && [[ "$STEPS_WITHOUT_SUDO" != *",$name,"* ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 step_selected() {
     local name="$1"
     if [[ -n "$ONLY_STEPS" ]]; then
@@ -176,7 +189,9 @@ main() {
     # tool the script runs stop at an untrusted-config error.
     cd "$HOME"
 
-    keep_sudo_alive
+    if needs_sudo; then
+        keep_sudo_alive
+    fi
     # preflight installs Homebrew, but --only may skip it
     if is_macos; then
         load_brew_env || true

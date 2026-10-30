@@ -160,8 +160,15 @@ configs/
   scripts/              helpers installed to ~/.local/bin
   project-templates/    starters for Node, Rust and C++ projects
 docs/                   shortcuts, tool notes, troubleshooting
-scripts/                git-clone-bare-for-worktrees
+scripts/                git-clone-bare-for-worktrees, test-setup.sh (what CI runs)
 ```
+
+## Testing
+
+`scripts/test-setup.sh` runs shellcheck, checks that every `links.txt` source
+exists and every config parses, then runs the dotfiles and git steps twice in a
+throwaway `HOME`; the second run must change nothing. CI runs it on macOS and
+Ubuntu for every push.
 
 ## Troubleshooting
 

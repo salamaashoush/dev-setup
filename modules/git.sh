@@ -108,15 +108,18 @@ ExecStartPost=/bin/sh -c 'ssh-add -q ~/.ssh/id_ed25519 2>/dev/null || true'
 WantedBy=default.target
 EOF
 
-    # Enable and start SSH agent
+    # Its own file: the system step rewrites wayland.conf on every run
+    ensure_directory "$HOME/.config/environment.d"
+    echo 'SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"' > "$HOME/.config/environment.d/ssh-agent.conf"
+
+    # Containers and SSH-only sessions have no user systemd instance
+    if ! systemctl --user show-environment &>/dev/null; then
+        print_warning "No systemd user session; the SSH agent starts at the next graphical login"
+        return 0
+    fi
     systemctl --user daemon-reload
     systemctl --user enable ssh-agent.service
     systemctl --user start ssh-agent.service 2>/dev/null || true
-
-    # Add SSH_AUTH_SOCK to environment
-    if ! grep -q "SSH_AUTH_SOCK" "$HOME/.config/environment.d/wayland.conf" 2>/dev/null; then
-        echo 'SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"' >> "$HOME/.config/environment.d/wayland.conf"
-    fi
 
     print_success "SSH agent configured to start automatically"
 }
