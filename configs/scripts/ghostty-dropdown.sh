@@ -6,13 +6,11 @@
 
 # Check required dependencies
 # wmctrl and xdotool are X11 tools — they work under XWayland on Wayland sessions
-for cmd in ghostty; do
-    if ! command -v "$cmd" &>/dev/null; then
-        notify-send "Ghostty Dropdown" "Missing dependency: $cmd" -u critical 2>/dev/null || \
-            echo "Error: $cmd is required but not installed" >&2
-        exit 1
-    fi
-done
+if ! command -v ghostty &>/dev/null; then
+    notify-send "Ghostty Dropdown" "Missing dependency: ghostty" -u critical 2>/dev/null || \
+        echo "Error: ghostty is required but not installed" >&2
+    exit 1
+fi
 
 # Check for window management tools (X11/XWayland required)
 if ! command -v wmctrl &>/dev/null || ! command -v xdotool &>/dev/null; then
