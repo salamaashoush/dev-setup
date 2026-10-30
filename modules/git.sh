@@ -47,7 +47,8 @@ setup_git() {
         # from the repo through include.path, so none of that lands in it.
         local shared="$CONFIGS_DIR/gitconfig"
         if ! git config --global --get-all include.path 2>/dev/null | grep -qxF "$shared"; then
-            # Older runs rendered the whole template here; preflight backed it up
+            # Older runs rendered the whole template here
+            backup_file "$HOME/.gitconfig"
             : > "$HOME/.gitconfig"
             git config --global --add include.path "$shared"
         fi
