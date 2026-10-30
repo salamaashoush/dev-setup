@@ -187,7 +187,7 @@ zq proj       # Query database
 - Keeps tmux bindings: session → workspace, window → tab, pane → pane
 - Labels the coding agent running in each pane
 - Resumes Claude Code sessions after a server restart (`install.sh` runs `herdr integration install claude`)
-- Named persistent sessions: `hrs <name>`, `hrl`, `hra`, `hrk`
+- Named persistent sessions: `hrs <name>` attaches or creates; `herdr session list` and `herdr session stop` manage them
 
 **Key Bindings** (prefix `Ctrl+Space`):
 - `Alt+Enter` → Split horizontally

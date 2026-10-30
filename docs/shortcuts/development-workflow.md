@@ -23,38 +23,22 @@ uv run main.py             # runs inside the project's .venv
 cargo init
 # Create from template
 cp -r ~/.config/project-templates/rust/* .
-
-# Go
-go mod init github.com/user/project
-# Create from template
-cp -r ~/.config/project-templates/go/* .
 ```
 
 ### Common Development Tasks
 
 #### Git Workflow
 ```bash
-# Quick status check
-gs                      # git status (alias)
+gs                      # short status
+lg                      # lazygit: stage hunks, commit, rebase
+gd / gds                # unstaged / staged diff
+gsw -c feature/new      # new branch
+fgb                     # fuzzy-switch branch
 
-# Interactive staging
-lg                      # lazygit (full UI)
-ga -p                   # git add --patch
-
-# Commit with conventional format
-gc -m "feat: add new feature"
-gc -m "fix: resolve issue #123"
-gc -m "docs: update README"
-
-# Quick amend
-gca                     # git commit --amend
-gcane                   # amend without editing message
-
-# Branch operations
-gco -b feature/new     # checkout new branch
-gco main              # checkout main
-gm main               # merge main
-grb main              # rebase on main
+# One worktree per parallel agent session
+wt feature/new          # ../<repo>-feature-new on a new branch, then cd into it
+wtl                     # list worktrees
+wtrm                    # remove this one once merged
 ```
 
 #### File Operations
@@ -294,8 +278,8 @@ proj() {
 hrs myproject          # herdr --session myproject
 
 # List and stop sessions
-hrl                    # herdr session list
-hrk myproject          # herdr session stop myproject
+herdr session list
+herdr session stop myproject
 
 # Quick actions in herdr (prefix Ctrl+Space)
 Alt+Enter → Split horizontally

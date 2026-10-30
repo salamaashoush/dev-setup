@@ -102,7 +102,7 @@ git init
 pnpm init && pnpm add -D typescript
 
 # Python
-pyvenv && pyactivate   # uv venv, then activate .venv
+uv venv && source .venv/bin/activate
 
 # Rust
 cargo init

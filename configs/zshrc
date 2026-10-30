@@ -105,9 +105,6 @@ export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 
-# ripgrep reads no config file unless told where it is
-export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
-
 # ===========================================
 # PATH Configuration
 # ===========================================
@@ -257,7 +254,13 @@ zstyle ':completion:*' cache-path "$_zcache_dir/compcache"
 # Load Aliases and Functions
 # ===========================================
 
-[[ -f "$HOME/.config/shell/aliases.sh" ]] && source "$HOME/.config/shell/aliases.sh"
+# Agent shells (Claude Code sets AI_AGENT and CLAUDECODE) keep stock commands:
+# no shortcuts, and no ripgrep defaults that change what a search returns
+if [[ -z "${AI_AGENT:-}${CLAUDECODE:-}" ]]; then
+  # ripgrep reads no config file unless told where it is
+  export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
+  [[ -f "$HOME/.config/shell/aliases.sh" ]] && source "$HOME/.config/shell/aliases.sh"
+fi
 
 # ===========================================
 # Shell Functions

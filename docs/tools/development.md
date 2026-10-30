@@ -19,7 +19,7 @@ Runtimes, build tools, and most developer CLIs come from mise (`configs/mise/con
 **Version Management**: mise (`python = "latest"`, prebuilt python-build-standalone interpreters)  
 **Packages and venvs**: uv (mise)
 
-**Helpers** (`aliases.sh`): `py` (python3), `pyp` (`uv pip`), `pyvenv` (`uv venv`), `pyactivate`. Python CLI tools install through uv with `mise use -g pipx:<tool>`. Zed formats Python with its built-in ruff language server.
+Python CLI tools install through uv with `mise use -g pipx:<tool>`. Zed formats Python with its built-in ruff language server.
 
 ### Rust
 **Description**: Systems programming language  
@@ -135,15 +135,7 @@ gh pr review
 
 ## Database Tools
 
-No database server is installed. `db-start` (from `aliases.sh`) runs one in Docker:
-
-```bash
-db-start postgres      # PostgreSQL 16 on 5432
-db-start redis         # Redis on 6379
-db-start mysql         # MySQL 8 on 3306
-db-shell postgres      # psql, redis-cli, or mysql inside the container
-db-stop postgres       # stop and remove it
-```
+No database server is installed; run one per project with `docker compose`.
 
 ## Containers
 

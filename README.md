@@ -61,8 +61,7 @@ sessions (prefix `Ctrl+Space`, tmux-style bindings).
 **Editors.** Zed for the GUI and Neovim with LazyVim in the terminal. LazyVim
 includes the Claude Code extra (`<leader>ac` toggles Claude).
 
-**Toolchains.** Node.js LTS, Bun, pnpm, yarn, Python with uv (`pyp` is
-`uv pip`, `pyvenv` is `uv venv`), Rust (with rust-analyzer, clippy,
+**Toolchains.** Node.js LTS, Bun, pnpm, yarn, Python with uv, Rust (with rust-analyzer, clippy,
 rustfmt and the wasm32 target), cargo-watch, cargo-nextest, bacon and friends,
 CMake, Ninja, just, sccache and mbx (mr boxington), which wraps Cargo so
 worktrees share one build cache. C and C++ compilers come from the Xcode Command

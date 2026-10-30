@@ -20,7 +20,7 @@ Main configuration file (`configs/zshrc`), in order:
 9. **Local Overrides**: `~/.zshrc.local`, kept out of version control
 
 ### ~/.config/shell/aliases.sh
-Every alias and most functions (`configs/aliases.sh`), including all git and docker shortcuts. It does not override `ls`, `cat`, `grep`, `find`, `du` or `df`, so scripts see the standard commands.
+Shortcuts for interactive use (`configs/aliases.sh`), skipped in agent shells. It does not override any real command, so scripts see the standard ones.
 
 ## Key Features
 
@@ -90,65 +90,26 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 ```
 
-## Essential Aliases
+## Aliases
 
-`aliases.sh` is the single source for aliases. Run `cheat` for the full list.
+`aliases.sh` holds about 40 shortcuts for the person at the keyboard; `cheat`
+lists them with their descriptions, read from the file itself. Agents run most
+commands, so zshrc skips the file when `AI_AGENT` or `CLAUDECODE` is set, and
+agent shells see stock commands and a ripgrep with no config. Nothing in it
+shadows a real command.
 
-### File Operations
 ```bash
-alias ll='eza -l --icons --git --header --group-directories-first'
-alias la='eza -la --icons --git --header --group-directories-first'
-alias lt='eza --tree --icons --git --level=2 --group-directories-first'
-alias b='bat --style=auto --paging=never'
-alias bcat='bat --style=plain --paging=never'
+ll / la / lt        # eza listing, with hidden files, as a tree
+g gs gd gds gl gp gpf gsw lg   # git, short status, diffs, log graph, push, lazygit
+yolo / ccc / ccr    # Claude Code: no prompts, continue, resume
+wt <branch> [base]  # worktree beside the repo for a parallel agent, then cd into it
+wtrm [dir]          # remove it; git refuses while it has uncommitted work
+hrs <name>          # herdr session, attach or create
+fo / fcd / frg / fgb    # fzf: open a file, jump to a directory, grep, switch branch
+y                   # yazi; cd to its directory on quit
+killport 3000       # stop whatever listens on a port
+dev-cleanup         # mbx gc, brew, pnpm, uv and docker caches
 ```
-
-### Git Shortcuts
-```bash
-alias g='git'
-alias gs='git status'
-alias gd='git diff'
-alias gds='git diff --staged'
-alias gc='git commit'
-alias gca='git commit --amend'
-alias gp='git push'
-alias gpl='git pull'
-alias gl='git log --oneline --graph --decorate -20'
-alias gst='git stash'
-alias lg='lazygit'
-```
-
-Oh My Zsh's git plugin is not loaded, and several of these differ from it: `gst` is `git stash` (OMZ: `git status`) and `gl` is the log graph (OMZ: `git pull`).
-
-### Docker
-```bash
-alias d='docker'
-alias dc='docker compose'
-alias dcu='docker compose up -d'
-alias dcd='docker compose down'
-alias dps='docker ps'
-alias dex='docker exec -it'
-```
-
-### Development
-```bash
-alias yolo='claude --dangerously-skip-permissions'
-alias hr='herdr'
-alias pyvenv='uv venv'
-y             # yazi; cd to its directory on quit
-hrs <name>    # herdr session, attach or create
-```
-
-### System
-```bash
-reload        # exec zsh (re-sourcing ~/.zshrc stacks hooks)
-myip          # public IP
-killport 3000 # kill whatever listens on a port
-fkill         # pick processes with fzf and send SIGTERM (fkill 9 for SIGKILL)
-copy          # pbcopy, wl-copy, or xclip
-```
-
-There is no `paste` alias: it shadowed the system `paste` utility. Use `pbpaste` (macOS) or `wl-paste` (Wayland).
 
 ## Zinit Plugins
 
