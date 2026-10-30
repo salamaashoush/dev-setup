@@ -4,11 +4,6 @@
 setup_productivity_apps() {
     print_header "Gaming & Productivity Applications"
 
-    # Window Management (useful for gaming too)
-    if is_macos; then
-        brew_install --cask rectangle stats
-    fi
-
     # System Monitoring (for gaming performance)
     if is_macos; then
         # Already installed with terminal tools
@@ -42,9 +37,8 @@ setup_productivity_apps() {
     fi
 
     # Gaming platforms and tools
-    if is_macos; then
-        brew_install --cask steam
-    else
+    # macOS gets Steam from the Brewfile
+    if ! is_macos; then
         # Steam and gaming essentials for Linux (optional — ~2GB+ download)
         if [[ "$INSTALL_GAMING" != true ]]; then
         print_info "Skipping gaming packages"
@@ -143,13 +137,6 @@ EOF
         print_info "  gamemoderun mangohud %command%"
         print_info "  PROTON_ENABLE_NVAPI=1 gamemoderun %command%  (for NVIDIA DLSS)"
         fi
-    fi
-
-    # Screen Recording (for gaming clips)
-    if is_macos; then
-        brew_install --cask obs
-    else
-        aur_install obs-studio || true
     fi
 
     print_success "Productivity apps setup complete"

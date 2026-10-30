@@ -6,12 +6,8 @@ setup_game_development() {
 
     [[ "$INSTALL_GAMEDEV" != true ]] && { print_info "Skipping game development tools"; return 0; }
 
-    if is_macos; then
-        brew_install --cask godot blender
-        brew_install molten-vk
-        print_success "Game development tools installed"
-        return 0
-    fi
+    # macOS gets these from the Brewfile
+    is_macos && return 0
 
     # Engines and content tools
     aur_install godot blender || true

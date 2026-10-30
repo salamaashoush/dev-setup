@@ -93,7 +93,7 @@ Bolt can take it (`Option+Space` works too). Grant it Accessibility for window
 management. Linux uses Rofi.
 
 **Apps (macOS).** Google Chrome, Rectangle, Stats, Slack, Discord, 1Password,
-Insomnia, OBS and Steam. Linux gets the native equivalents plus KDE Plasma
+OBS and Steam, all listed in the `Brewfile`. Linux gets the native equivalents plus KDE Plasma
 tweaks, GPU drivers and optional gaming packages.
 
 **Disk cleanup.** [sweeprs](https://github.com/salamaashoush/sweeprs), installed
@@ -115,7 +115,8 @@ repo and every machine gets the tool on its next pull.
 
 Homebrew and pacman keep what needs system integration or has no macOS arm64
 build in mise: zsh, git, eza, btop, Docker and Colima, a handful of network
-tools, GUI apps and fonts.
+tools, GUI apps and fonts. They are listed in the `Brewfile` and
+`packages/arch.txt`; hardware-specific Arch packages stay in their module.
 
 Upgrade everything with `topgrade`, or separately with `mise up` and
 `brew upgrade`.
@@ -139,6 +140,8 @@ for one machine where nothing is linked:
 bootstrap.sh            fresh-machine entry point (bash 3.2 safe)
 install.sh              the installer: flags, step order
 lib/                    shared helpers and the dotfile linker
+Brewfile                macOS packages (brew bundle)
+packages/arch.txt       Arch packages every machine gets
 modules/                one file per install step
 configs/
   links.txt             which dotfile goes where

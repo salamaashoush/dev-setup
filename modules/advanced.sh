@@ -46,27 +46,8 @@ set_default_browser() {
 setup_advanced_tools() {
     print_header "Communication & Media Tools"
 
-    # Media tools (useful for web dev and gaming)
-    if is_macos; then
-        brew_install imagemagick ffmpeg
-    else
-        aur_install imagemagick ffmpeg || true
-    fi
-
-    # Browser (Chrome as default)
-    if is_macos; then
-        brew_install --cask google-chrome
-    else
-        aur_install google-chrome || true
-    fi
+    # Chrome itself comes from the package lists
     set_default_browser "chrome"
-
-    # Communication Tools (Discord for gaming, Slack for work)
-    if is_macos; then
-        brew_install --cask discord slack 1password
-    else
-        aur_install discord slack-desktop-wayland 1password || true
-    fi
 
     print_success "Communication & media tools setup complete"
 }

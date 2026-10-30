@@ -10,13 +10,8 @@ install_nerd_fonts() {
     # - Symbols Nerd Font (icon fallback)
 
     if is_macos; then
-        # macOS - use Homebrew casks
-        print_info "Installing fonts via Homebrew..."
-        brew_install --cask \
-            font-caskaydia-cove-nerd-font \
-            font-jetbrains-mono-nerd-font \
-            font-symbols-only-nerd-font \
-            font-fira-code-nerd-font
+        # The font casks are in the Brewfile
+        :
     else
         # Linux (Arch) - use pacman/yay
         if command_exists paru || command_exists yay; then
@@ -166,22 +161,6 @@ install_tokyo_night_themes() {
 setup_terminal_and_shell() {
     print_header "Terminal & Shell Setup"
 
-    # Install terminal emulators (Ghostty is primary)
-    if is_macos; then
-        brew_install --cask ghostty kitty
-    else
-        # Ghostty installation on Arch
-        local aur_cmd=""; command_exists paru && aur_cmd="paru" || aur_cmd="yay"
-        if $aur_cmd -Ss ghostty &>/dev/null; then
-            aur_install ghostty || true
-        else
-            print_info "Ghostty not available in AUR, installing from official source..."
-            # Install dependencies and build from source if needed
-            aur_install gtk4 libadwaita || true
-        fi
-        aur_install kitty || true  # Fallback
-    fi
-
     # Ghostty drop-down terminal on KDE; the script itself comes from links.txt
     if is_linux && is_kde_plasma; then
         ensure_directory "$HOME/.local/share/applications"
@@ -206,17 +185,6 @@ EOF
 
     # Install Nerd Fonts
     install_nerd_fonts
-
-    # Install CLI tools
-    if is_macos; then
-        # Everything else on the command line comes from configs/mise/config.toml
-        brew_install zsh eza btop procs xan mtr nmap bandwhich tree watch asciinema noti
-    else
-        # Split into groups so one failure doesn't block the rest
-        # Everything else on the command line comes from configs/mise/config.toml
-        aur_install zsh eza btop procs tree procps-ng || true
-        aur_install mtr nmap asciinema xan bandwhich noti wmctrl xdotool || true
-    fi
 
     # Set Zsh as default shell
     if command_exists zsh && [[ "$SHELL" != *"zsh"* ]]; then

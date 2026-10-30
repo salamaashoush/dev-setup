@@ -40,13 +40,6 @@ SSHCONF
 setup_git() {
     print_header "Git Configuration"
 
-    # Install git tools
-    if is_macos; then
-        brew_install git
-    else
-        aur_install git || true
-    fi
-
     # Configure Git
     if command_exists git; then
         # ~/.gitconfig belongs to this machine: identity, credential helpers and

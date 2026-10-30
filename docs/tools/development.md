@@ -158,7 +158,6 @@ db-stop postgres       # stop and remove it
 
 ### HTTP Clients
 - **xh**: Command-line HTTP client with httpie's request syntax, in Rust
-- **insomnia**: GUI API client
 
 ## Development Utilities
 

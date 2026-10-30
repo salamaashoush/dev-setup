@@ -108,10 +108,18 @@ verify_installation() {
 run_doctor() {
     print_header "Doctor"
     local problems=0
+    load_choices
 
     print_info "Dotfiles (configs/links.txt)"
     if check_links; then
         print_success "Every link points into $CONFIGS_DIR"
+    else
+        problems=$((problems + 1))
+    fi
+
+    print_info "Packages"
+    if check_packages; then
+        print_success "Everything in the package list is installed"
     else
         problems=$((problems + 1))
     fi

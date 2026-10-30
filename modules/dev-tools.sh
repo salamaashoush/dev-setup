@@ -195,23 +195,12 @@ setup_development_tools() {
 
     # Compilers and linkers. cmake, ninja, just, the JS and Rust toolchains, and
     # the cargo tools come from configs/mise/config.toml.
-    if is_linux; then
-        # mold: dramatically faster linking, which dominates Rust rebuild time
-        aur_install base-devel gcc clang mold lld || true
-    fi
-
     setup_rust_cargo_config
 
-    # Code Editors
-    if is_macos; then
-        brew_install --cask zed
-    else
-        aur_install zed || true
-        # Arch ships the CLI as zeditor; link `zed` so scripts, yazi and muscle memory agree
-        if ! command_exists zed && command_exists zeditor; then
-            ensure_directory "$HOME/.local/bin"
-            ln -sf "$(command -v zeditor)" "$HOME/.local/bin/zed"
-        fi
+    # Arch ships the Zed CLI as zeditor; link `zed` so scripts, yazi and muscle memory agree
+    if is_linux && ! command_exists zed && command_exists zeditor; then
+        ensure_directory "$HOME/.local/bin"
+        ln -sf "$(command -v zeditor)" "$HOME/.local/bin/zed"
     fi
 
     # Configure Neovim (LazyVim). An existing config is left alone so a re-run
@@ -225,7 +214,6 @@ setup_development_tools() {
 
     # Container Tools
     if is_macos; then
-        brew_install docker docker-buildx docker-compose colima
         configure_docker_cli_plugins
 
         # colima.yaml is seeded by links.txt. A running VM is left alone: stopping
@@ -235,9 +223,6 @@ setup_development_tools() {
             colima start || FAILED_PACKAGES+=("colima start")
         fi
     else
-        # Install Docker and tools
-        aur_install docker docker-buildx docker-compose || true
-
         # Setup Docker permissions and group
         setup_docker_linux
     fi
@@ -250,13 +235,6 @@ setup_development_tools() {
         || FAILED_PACKAGES+=("dockside")
 
     # REMOVED: Database GUI tools - use web-based tools instead
-
-    # API Tools for web development
-    if is_macos; then
-        brew_install --cask insomnia
-    else
-        aur_install insomnia-bin || true
-    fi
 
     # Mise handles most version management now
     # Only keeping specialized toolchains

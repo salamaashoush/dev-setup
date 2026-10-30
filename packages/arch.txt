@@ -1,0 +1,22 @@
+# Arch packages every machine gets, installed by the packages step through paru
+# or yay. Packages that depend on the GPU, CachyOS, KDE or a setup answer stay
+# with their module. Whitespace separated; # starts a comment.
+
+# Shell and terminal
+zsh eza btop procs tree procps-ng
+mtr nmap asciinema xan bandwhich noti wmctrl xdotool
+ghostty kitty
+git
+
+# Compilers and linkers; mold makes Rust relinks much faster
+base-devel gcc clang mold lld
+
+# Containers
+docker docker-buildx docker-compose
+
+# Media
+imagemagick ffmpeg
+
+# Apps
+zed obs-studio
+google-chrome discord slack-desktop-wayland 1password

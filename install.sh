@@ -65,6 +65,8 @@ source "$SCRIPT_DIR/modules/preflight.sh"
 source "$SCRIPT_DIR/modules/system.sh"
 # shellcheck source=modules/mise.sh
 source "$SCRIPT_DIR/modules/mise.sh"
+# shellcheck source=modules/packages.sh
+source "$SCRIPT_DIR/modules/packages.sh"
 # shellcheck source=modules/dotfiles.sh
 source "$SCRIPT_DIR/modules/dotfiles.sh"
 # shellcheck source=modules/terminal.sh
@@ -96,6 +98,7 @@ STEPS=(
     "preflight:preflight_checks"
     "mise:setup_mise"
     "dotfiles:setup_dotfiles"
+    "packages:setup_packages"
     "system:setup_system_optimizations"
     "terminal:setup_terminal_and_shell"
     "git:setup_git"
