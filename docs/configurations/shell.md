@@ -228,8 +228,6 @@ $rust\
 $python\
 $golang\
 $docker_context\
-$aws\
-$kubernetes\
 $cmd_duration\
 $jobs\
 $battery\

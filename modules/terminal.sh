@@ -124,34 +124,12 @@ verify_nerd_fonts() {
 install_tokyo_night_themes() {
     local theme_base="https://raw.githubusercontent.com/folke/tokyonight.nvim/main/extras"
 
-    # Download themes for installed tools
-    if command_exists kitty && [[ -d "$HOME/.config/kitty" ]]; then
-        curl -fsSL "$theme_base/kitty/tokyonight_storm.conf" -o "$HOME/.config/kitty/tokyonight_storm.conf" 2>/dev/null || true
-    fi
-
+    # kitty.conf carries its colours inline; bat and gitui need theme files
     if command_exists bat; then
         ensure_directory "$HOME/.config/bat/themes"
         curl -fsSL "$theme_base/sublime/tokyonight_storm.tmTheme" -o "$HOME/.config/bat/themes/tokyonight_storm.tmTheme" 2>/dev/null || true
         bat cache --build >/dev/null 2>&1 || true
     fi
-
-    if command_exists lazygit && [[ -d "$HOME/.config/lazygit" ]]; then
-        # The theme is already integrated in our lazygit.yml config
-        :
-    fi
-
-    if command_exists delta; then
-        ensure_directory "$HOME/.config/git"
-        curl -fsSL "$theme_base/delta/tokyonight_storm.gitconfig" -o "$HOME/.config/git/delta-tokyonight.gitconfig" 2>/dev/null || true
-    fi
-
-    if command_exists yazi && [[ -d "$HOME/.config/yazi" ]]; then
-        # Do NOT overwrite theme.toml here -- this repo ships its own fixed
-        # configs/yazi/theme.toml (current [mgr]/[icon] schema). Only fetch the
-        # syntect highlighting theme it references via syntect_theme.
-        curl -fsSL "$theme_base/sublime/tokyonight_storm.tmTheme" -o "$HOME/.config/yazi/tokyonight_storm.tmTheme" 2>/dev/null || true
-    fi
-
 
     if command_exists gitui && [[ -d "$HOME/.config/gitui" ]]; then
         curl -fsSL "$theme_base/gitui/tokyonight_storm.ron" -o "$HOME/.config/gitui/theme.ron" 2>/dev/null || true

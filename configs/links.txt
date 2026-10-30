@@ -12,7 +12,6 @@ link    all    starship.toml                  ~/.config/starship.toml
 
 link    all    ghostty.conf                   ~/.config/ghostty/config
 link    all    kitty.conf                     ~/.config/kitty/kitty.conf
-link    all    kitty-session.conf             ~/.config/kitty/kitty-session.conf
 link    linux  scripts/ghostty-dropdown.sh    ~/.local/bin/ghostty-dropdown
 
 link    all    bat/config                     ~/.config/bat/config
@@ -22,12 +21,9 @@ link    all    topgrade.toml                  ~/.config/topgrade/topgrade.toml
 link    all    tokyonight-storm.yml           ~/.config/vivid/themes/tokyonight-storm.yml
 link    all    herdr/config.toml              ~/.config/herdr/config.toml
 link    all    yazi/yazi.toml                 ~/.config/yazi/yazi.toml
-link    all    yazi/keymap.toml               ~/.config/yazi/keymap.toml
-link    all    yazi/theme.toml                ~/.config/yazi/theme.toml
 seed    all    btop.conf                      ~/.config/btop/btop.conf
 
-link    all    zed/settings.json              ~/.config/zed/settings.json
-link    all    zed/keymap.json                ~/.config/zed/keymap.json
+seed    all    zed/settings.json              ~/.config/zed/settings.json
 
 link    all    gitignore_global               ~/.gitignore_global
 link    all    gitmessage                     ~/.gitmessage

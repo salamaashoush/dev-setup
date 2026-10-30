@@ -78,13 +78,12 @@ silently.
 ### Zed
 **Description**: High-performance code editor built in Rust  
 **Command**: `zed` (Arch ships the CLI as `zeditor`; `install.sh` links `~/.local/bin/zed` to it)  
-**Config**: `configs/zed/settings.json`, `configs/zed/keymap.json`
+**Config**: `configs/zed/settings.json`, seeded once because Zed writes machine state (SSH hosts) into it
 
 **Setup**:
 - Tokyo Night Storm theme and Catppuccin Macchiato icons, from extensions Zed installs on first launch
-- VS Code base keymap plus the bindings in `keymap.json` ([Editor Shortcuts](../shortcuts/editors.md))
-- Edit predictions from Zed's own provider
-- Format on save; Python through Zed's built-in ruff language server
+- VS Code base keymap, no custom bindings ([Editor Shortcuts](../shortcuts/editors.md))
+- Only non-default settings; clippy as rust-analyzer's check
 - direnv loaded through the shell hook
 
 **Why Zed?**

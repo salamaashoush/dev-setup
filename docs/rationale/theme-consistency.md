@@ -43,15 +43,9 @@ URL:            #73daca (Teal)
 
 ## Applying Theme Consistently
 
-### Terminal (Kitty)
-```conf
-# Automatic theme loading
-include tokyonight_storm.conf
-
-# Transparency for depth
-background_opacity 0.95
-background_blur 64
-```
+### Terminal (Ghostty, Kitty)
+Both are opaque. Ghostty uses its bundled `TokyoNight Storm` with folke's bright
+colours; `kitty.conf` carries the same palette inline, so nothing is downloaded.
 
 ### Shell (Starship)
 ```toml
@@ -185,7 +179,6 @@ export FZF_DEFAULT_OPTS='
 - Match Breeze Dark style
 - Integrate with Plasma themes
 - Respect system font settings
-- Support Wayland transparency
 
 ## Creating Custom Themes
 
@@ -240,7 +233,7 @@ EOF
 When adding new tools:
 1. ✓ Check for Tokyo Night theme
 2. ✓ Use CaskaydiaCove NF font
-3. ✓ Match transparency settings
+3. ✓ Keep the background opaque
 4. ✓ Apply consistent keybindings
 5. ✓ Test in both light/dark environments
 

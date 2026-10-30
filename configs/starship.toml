@@ -21,8 +21,6 @@ $rust\
 $python\
 $golang\
 $docker_context\
-$aws\
-$kubernetes\
 $cmd_duration\
 $jobs\
 $battery\
@@ -119,16 +117,7 @@ style = "bold blue"
 only_with_files = true
 format = "[$symbol$context]($style) "
 
-[aws]
-symbol = " "
-style = "bold orange"
-format = '[$symbol($profile )(\($region\) )]($style)'
 
-[kubernetes]
-disabled = false
-symbol = "󱃾 "
-style = "bold cyan"
-format = '[$symbol$context( \($namespace\))]($style) '
 
 [cmd_duration]
 min_time = 2000

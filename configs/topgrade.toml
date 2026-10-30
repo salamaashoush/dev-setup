@@ -25,7 +25,6 @@ disable = ["node", "firmware", "restarts"]
 
 [linux]
 # Arch Linux
-arch_package_manager = "yay"
 show_arch_news = true
 
 [brew]

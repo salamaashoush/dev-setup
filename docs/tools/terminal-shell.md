@@ -10,24 +10,20 @@
 
 **Key Settings**:
 - Tokyo Night Storm, with the bright colors from folke/tokyonight.nvim
-- `clipboard-read = ask`: programs in the terminal, including over SSH, must ask before reading the clipboard
+- Programs in the terminal, including over SSH, must ask before reading the clipboard (Ghostty's default)
 - Shell integration adds `ssh-env` and `ssh-terminfo`, so remote hosts get Ghostty's terminfo or fall back to `xterm-256color`
-- Tabs in the titlebar on macOS
+- Splits on `Ctrl+Shift+\` and `Ctrl+Shift+-`, moved between with `Ctrl+Shift+H/J/K/L`
 - `Ctrl+Alt+Arrow` unbound so herdr can use it for pane focus
 
 ### Kitty
 **Description**: GPU-accelerated terminal emulator with extensive customization  
 **Category**: Terminal (fallback)  
 **Installed**: Both platforms  
-**Configuration**: `configs/kitty.conf`
+**Configuration**: `configs/kitty.conf` (linked to `~/.config/kitty/kitty.conf`)
 
 **Key Features**:
-- GPU acceleration for smooth scrolling and rendering
-- Ligature support with CaskaydiaCove Nerd Font
-- Tokyo Night Storm theme
-- Background blur and transparency
+- Same font, opaque Tokyo Night Storm palette and split keys as Ghostty
 - Image protocol support for inline images
-- Session management and layouts
 
 **Why Kitty?**
 - Fastest terminal rendering performance
@@ -213,25 +209,25 @@ zq proj       # Query database
 - Tab support for multiple directories
 - Extensible with Lua plugins
 
-**Essential Key Bindings**:
+**Key Bindings** (yazi's defaults; the repo ships no keymap):
 - `h/j/k/l` → Navigate (left/down/up/right)
 - `Enter` → Open file/enter directory
 - `q` → Quit
 - `y` → Yank (copy) files
 - `x` → Cut files
 - `p` → Paste files
-- `d` → Delete files
+- `d` → Move files to the trash
 - `r` → Rename
 - `Space` → Toggle selection
 - `.` → Toggle hidden files
-- `/` → Search
-- `!` → Open shell in directory
+- `/` → Find the next match
+- `;` → Run a shell command (`:` waits for it to finish)
 
 **Advanced Features**:
-- `Tab` → Create new tab
+- `t t` → New tab in the current directory
 - `1-9` → Switch to tab
 - `[/]` → Previous/next tab
-- `f` → Quick filter
+- `f` → Filter
 - `s` → Search with fd
 - `S` → Search contents with ripgrep
 

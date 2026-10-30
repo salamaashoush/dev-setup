@@ -4,63 +4,21 @@ Zed is the GUI editor and Neovim with LazyVim the terminal editor.
 
 ## Zed Editor
 
-Zed runs on its VS Code base keymap (`"base_keymap": "VSCode"`), with the additions in `configs/zed/keymap.json`. Base keymap shortcuts use `Cmd` on macOS and `Ctrl` on Linux; the `keymap.json` additions use `Ctrl` on both. On Arch the Zed CLI is `zeditor`, and `install.sh` links `~/.local/bin/zed` to it, so `zed .` works on both platforms.
+Zed uses its VS Code base keymap (`"base_keymap": "VSCode"`) with no custom
+bindings, so VS Code habits carry over. `Mod` below is `Cmd` on macOS and
+`Ctrl` on Linux. On Arch the Zed CLI is `zeditor`, and `install.sh` links
+`~/.local/bin/zed` to it, so `zed .` works on both platforms.
 
-### File Navigation
-- `Cmd+P` (macOS) / `Ctrl+P` (Linux) → File finder
-- `Cmd+Shift+P` (macOS) / `Ctrl+Shift+P` (Linux) → Command palette
-- `Cmd+Shift+F` (macOS) / `Ctrl+Shift+F` (Linux) → Project search
-- `Ctrl+Shift+E` → Focus project panel
-- `Ctrl+Shift+O` → Outline
-- `Ctrl+Shift+R` → Project symbols
-
-### Panels & Terminal
-- `Ctrl+B` → Toggle left dock (project panel)
-- `Ctrl+\` → Toggle right dock
-- `Ctrl+J` → Toggle bottom dock
-- ``Ctrl+` `` → Focus terminal
-- ``Ctrl+Shift+` `` → New terminal
-- `Ctrl+Shift+C` / `Ctrl+Shift+V` → Copy/paste in the terminal
-
-### Editing
-- `Ctrl+Shift+Up/Down` → Move line up/down
-- `Alt+Shift+Up/Down` → Duplicate line up/down
-- `Ctrl+Shift+K` → Delete line
-- `Ctrl+Enter` / `Ctrl+Shift+Enter` → Insert line below/above
-- `Ctrl+/` → Toggle line comment
-- `Ctrl+Shift+A` → Toggle block comment
-- `Ctrl+Shift+[` / `Ctrl+Shift+]` → Fold/unfold
-- `Ctrl+K Ctrl+0` / `Ctrl+K Ctrl+J` → Fold/unfold all
-
-### Multi-cursor
-- `Alt+Click` → Add cursor
-- `Ctrl+Alt+Up/Down` → Add cursor above/below
-- `Ctrl+D` → Select next occurrence
-- `Ctrl+Shift+L` → Select all occurrences
-- `Ctrl+U` → Undo last selection
-
-### Code Intelligence
-- `F12` → Go to definition
-- `Alt+F12` → Go to definition in a split
-- `Ctrl+F12` → Go to implementation
-- `Shift+F12` → Find references
-- `F2` → Rename
-- `Ctrl+.` → Code actions
-- `Tab` → Accept edit prediction (Zed's own provider)
-
-### Panes & Tabs
-- `Ctrl+K Arrow` → Focus pane in that direction
-- `Ctrl+K Ctrl+Arrow` → Split pane in that direction
-- `Ctrl+Tab` / `Ctrl+Shift+Tab` → Next/previous tab
-- `Alt+Left/Right` → Previous/next tab
-- `Ctrl+W` → Close tab
-- `Ctrl+Shift+N` / `Ctrl+Shift+W` → New/close window
-
-### Settings
-- `Ctrl+K Ctrl+S` → Open keymap
-- `Ctrl+K Ctrl+T` → Theme selector
-- Theme: Tokyo Night Storm from the `tokyo-night` extension, icons: Catppuccin Macchiato from `catppuccin-icons`. Zed installs both on first launch.
-- Formatting runs on save: Prettier for web languages, the language server for Rust, Go and C++, and Zed's built-in ruff language server for Python.
+- `Mod+P` → File finder; `Mod+Shift+P` → Command palette
+- `Mod+Shift+F` → Project search; `Mod+Shift+O` → Symbols in file
+- `Mod+B` → Toggle project panel; `Mod+J` → Toggle bottom dock
+- ``Ctrl+` `` → Terminal
+- `Mod+D` → Select next occurrence; `Mod+Shift+L` → Select all occurrences
+- `Alt+Up/Down` → Move line; `Shift+Alt+Up/Down` → Duplicate line
+- `Mod+/` → Toggle comment
+- `F12` → Go to definition; `Shift+F12` → References; `F2` → Rename
+- `Mod+.` → Code actions
+- `Mod+,` → Settings; `Mod+K Mod+S` → Keymap
 
 ## Neovim (LazyVim)
 
@@ -137,7 +95,7 @@ Zed runs on its VS Code base keymap (`"base_keymap": "VSCode"`), with the additi
 | Go to Definition | `F12` | `gd` |
 | Find References | `Shift+F12` | `gr` |
 | Rename | `F2` | `<leader>cr` |
-| Quick Fix | `Ctrl+.` | `<leader>ca` |
+| Quick Fix | `Cmd+.` | `<leader>ca` |
 
 ## Tips for Efficiency
 
@@ -149,5 +107,5 @@ Zed runs on its VS Code base keymap (`"base_keymap": "VSCode"`), with the additi
 
 ## Customization Locations
 
-- **Zed**: `~/.config/zed/keymap.json` (from `configs/zed/keymap.json`)
+- **Zed**: `~/.config/zed/keymap.json`, yours alone; the repo ships none
 - **Neovim**: `~/.config/nvim/lua/config/keymaps.lua`; LazyVim extras in `~/.config/nvim/lazyvim.json` (from `configs/lazyvim.json`)
