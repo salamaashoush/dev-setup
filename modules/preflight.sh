@@ -88,7 +88,7 @@ preflight_checks() {
         fi
     fi
 
-    # setup_git regenerates ~/.gitconfig; linked dotfiles back themselves up
+    # setup_git may reset ~/.gitconfig; linked dotfiles back themselves up
     [[ -f "$HOME/.gitconfig" ]] && backup_file "$HOME/.gitconfig"
     return 0
 }

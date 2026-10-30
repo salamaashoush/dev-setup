@@ -156,7 +156,7 @@ sudo scx_lavd              # Latency-tuned scheduler for gaming
 
 - Shell: `~/.zshrc`
 - Kitty: `~/.config/kitty/kitty.conf`
-- Git: `~/.gitconfig`
+- Git: `~/.gitconfig` (identity, helpers) includes `configs/gitconfig`
 - Zed: `~/.config/zed/settings.json`
 - Starship: `~/.config/starship.toml`
 - herdr: `~/.config/herdr/config.toml`

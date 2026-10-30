@@ -70,8 +70,10 @@ used as it is.
 Docker daemon (Linux), lazydocker, and
 [Dockside](https://github.com/salamaashoush/dockside) as the desktop UI.
 
-**Git.** A tuned `~/.gitconfig` with delta as the pager, lazygit, gitui, gh, a
-global gitignore and commit template, and an ed25519 SSH key.
+**Git.** `configs/gitconfig` (delta as the pager, fetch over https, push over
+SSH), included from a `~/.gitconfig` that holds only this machine's identity
+and credential helpers. Also lazygit, gitui, gh, a global gitignore and commit
+template, and an ed25519 SSH key.
 
 **Launcher (macOS).** [Bolt](https://github.com/salamaashoush/bolt), built from
 source as the last step (it needs macOS 15 and Swift 6.2 from the Command Line

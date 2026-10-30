@@ -45,15 +45,17 @@ setup_git() {
 
     # Configure Git
     if command_exists git; then
-        local git_name="$GIT_NAME"
-        local git_email="$GIT_EMAIL"
-
-        # Install gitconfig
-        if [[ -f "$CONFIGS_DIR/gitconfig" ]]; then
-            sed -e "s/{{USER_NAME}}/$git_name/g" \
-                -e "s/{{USER_EMAIL}}/$git_email/g" \
-                "$CONFIGS_DIR/gitconfig" > "$HOME/.gitconfig"
+        # ~/.gitconfig belongs to this machine: identity, credential helpers and
+        # whatever `git config --global` writes later. The shared settings come
+        # from the repo through include.path, so none of that lands in it.
+        local shared="$CONFIGS_DIR/gitconfig"
+        if ! git config --global --get-all include.path 2>/dev/null | grep -qxF "$shared"; then
+            # Older runs rendered the whole template here; preflight backed it up
+            : > "$HOME/.gitconfig"
+            git config --global --add include.path "$shared"
         fi
+        git config --global user.name "$GIT_NAME"
+        git config --global user.email "$GIT_EMAIL"
 
         # Install git helper scripts
         if [[ -f "$SCRIPT_DIR/scripts/git-clone-bare-for-worktrees.sh" ]]; then
@@ -69,9 +71,15 @@ setup_git() {
             git config --global credential.helper 'cache --timeout=3600'
         fi
 
-        # The template replaced any helper `gh auth login` registered earlier
-        if command_exists gh && gh auth status &>/dev/null; then
-            gh auth setup-git || true
+        # What `gh auth setup-git` writes, except it records gh's versioned
+        # install path, which breaks once mise prunes that version
+        if command_exists gh; then
+            local host
+            for host in github.com gist.github.com; do
+                git config --global --unset-all "credential.https://$host.helper" 2>/dev/null || true
+                git config --global --add "credential.https://$host.helper" ''
+                git config --global --add "credential.https://$host.helper" '!gh auth git-credential'
+            done
         fi
 
         # Setup SSH agent (Linux only - macOS uses keychain)

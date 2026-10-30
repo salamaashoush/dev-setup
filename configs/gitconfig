@@ -1,7 +1,3 @@
-[user]
-    email = {{USER_EMAIL}}
-    name = {{USER_NAME}}
-
 [core]
     editor = nvim
     pager = delta
@@ -259,11 +255,10 @@
 [pack]
     useBitmaps = true
 
-[credential]
-    # Platform-specific helper will be set by setup script
-
+# Fetch over https so a fresh machine can clone before its SSH key is on
+# GitHub; push over SSH
 [url "git@github.com:"]
-    insteadOf = https://github.com/
+    pushInsteadOf = https://github.com/
     
 [url "git@gitlab.com:"]
-    insteadOf = https://gitlab.com/
+    pushInsteadOf = https://gitlab.com/
