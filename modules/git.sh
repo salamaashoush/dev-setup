@@ -55,16 +55,6 @@ setup_git() {
                 "$CONFIGS_DIR/gitconfig" > "$HOME/.gitconfig"
         fi
 
-        # Install supporting files
-        [[ -f "$CONFIGS_DIR/gitignore_global" ]] && cp -f "$CONFIGS_DIR/gitignore_global" "$HOME/.gitignore_global"
-        [[ -f "$CONFIGS_DIR/gitmessage" ]] && cp -f "$CONFIGS_DIR/gitmessage" "$HOME/.gitmessage"
-
-        # Configure GitUI
-        if command_exists gitui; then
-            ensure_directory "$HOME/.config/gitui"
-            [[ -f "$CONFIGS_DIR/gitui/key_bindings.ron" ]] && cp -f "$CONFIGS_DIR/gitui/key_bindings.ron" "$HOME/.config/gitui/key_bindings.ron"
-        fi
-
         # Install git helper scripts
         if [[ -f "$SCRIPT_DIR/scripts/git-clone-bare-for-worktrees.sh" ]]; then
             mkdir -p "$HOME/.local/bin"

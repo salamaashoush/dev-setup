@@ -6,7 +6,7 @@
 **Description**: Native, GPU-accelerated terminal emulator  
 **Category**: Terminal (primary)  
 **Installed**: Both platforms  
-**Configuration**: `configs/ghostty.conf` (installed to `~/.config/ghostty/config`)
+**Configuration**: `configs/ghostty.conf` (linked to `~/.config/ghostty/config`)
 
 **Key Settings**:
 - Tokyo Night Storm, with the bright colors from folke/tokyonight.nvim
@@ -184,7 +184,7 @@ zq proj       # Query database
 ### herdr
 **Description**: An agent multiplexer that lives in your terminal ([herdr.dev](https://herdr.dev))  
 **Category**: Multiplexer  
-**Configuration**: `configs/herdr/config.toml` (installed to `~/.config/herdr/config.toml`)  
+**Configuration**: `configs/herdr/config.toml` (linked to `~/.config/herdr/config.toml`)  
 **Install**: mise, into `~/.config/mise/conf.d/local.toml` because it is per machine, skipped when a herdr is already on `PATH` (Omarchy ships it as a system package)
 
 **Advantages over tmux**:

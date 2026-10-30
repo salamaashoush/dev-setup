@@ -88,11 +88,7 @@ preflight_checks() {
         fi
     fi
 
-    # Backup existing configs
-    if [[ -f "$HOME/.zshrc" ]]; then
-        print_info "Backing up existing configs..."
-        [[ -f "$HOME/.zshrc" ]] && backup_file "$HOME/.zshrc"
-        [[ -f "$HOME/.gitconfig" ]] && backup_file "$HOME/.gitconfig"
-        [[ -f "$HOME/.config/kitty/kitty.conf" ]] && backup_file "$HOME/.config/kitty/kitty.conf"
-    fi
+    # setup_git regenerates ~/.gitconfig; linked dotfiles back themselves up
+    [[ -f "$HOME/.gitconfig" ]] && backup_file "$HOME/.gitconfig"
+    return 0
 }

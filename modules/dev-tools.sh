@@ -222,44 +222,17 @@ setup_development_tools() {
         fi
     fi
 
-    # Configure Zed
-    if { command_exists zed || command_exists zeditor; } && [[ -d "$CONFIGS_DIR/zed" ]]; then
-        local zed_dir="$HOME/.config/zed"
-        ensure_directory "$zed_dir"
-        [[ -f "$CONFIGS_DIR/zed/settings.json" ]] && cp -f "$CONFIGS_DIR/zed/settings.json" "$zed_dir/settings.json"
-        [[ -f "$CONFIGS_DIR/zed/keymap.json" ]] && cp -f "$CONFIGS_DIR/zed/keymap.json" "$zed_dir/keymap.json"
-    fi
-
 
     # Container Tools
     if is_macos; then
         brew_install docker docker-buildx docker-compose colima
         configure_docker_cli_plugins
 
-        # Configure Colima
-        if command_exists colima && [[ -f "$CONFIGS_DIR/colima/colima.yaml" ]]; then
-            # Check if Colima is already running
-            if colima status &>/dev/null; then
-                echo "Colima is already running. Stopping to apply new configuration..."
-                colima stop || true
-            fi
-
-            # Ensure config directory exists
-            ensure_directory "$HOME/.colima/default"
-
-            # Copy optimized configuration
-            cp -f "$CONFIGS_DIR/colima/colima.yaml" "$HOME/.colima/default/colima.yaml"
-            echo "Applied optimized Colima configuration"
-
-            # Start Colima with the configuration file
-            # The configuration file already contains all optimal settings
-            echo "Starting Colima with optimized settings..."
-            colima start || true
-
-            # Verify Colima is using VirtioFS
-            if colima status 2>/dev/null | grep -q "mountType: virtiofs"; then
-                echo "✓ Colima is using VirtioFS for optimal performance"
-            fi
+        # colima.yaml is seeded by links.txt. A running VM is left alone: stopping
+        # it would kill every container to re-apply settings it already has.
+        if command_exists colima && ! colima status &>/dev/null; then
+            print_info "Starting Colima..."
+            colima start || FAILED_PACKAGES+=("colima start")
         fi
     else
         # Install Docker and tools

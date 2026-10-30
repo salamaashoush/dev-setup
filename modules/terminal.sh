@@ -137,10 +137,6 @@ install_tokyo_night_themes() {
     if command_exists bat; then
         ensure_directory "$HOME/.config/bat/themes"
         curl -fsSL "$theme_base/sublime/tokyonight_storm.tmTheme" -o "$HOME/.config/bat/themes/tokyonight_storm.tmTheme" 2>/dev/null || true
-        # Install bat config
-        if [[ -f "$CONFIGS_DIR/bat/config" ]]; then
-            cp -f "$CONFIGS_DIR/bat/config" "$HOME/.config/bat/config"
-        fi
         bat cache --build >/dev/null 2>&1 || true
     fi
 
@@ -186,23 +182,10 @@ setup_terminal_and_shell() {
         aur_install kitty || true  # Fallback
     fi
 
-    # Configure Ghostty (primary terminal)
-    if [[ -f "$CONFIGS_DIR/ghostty.conf" ]]; then
-        ensure_directory "$HOME/.config/ghostty"
-        cp -f "$CONFIGS_DIR/ghostty.conf" "$HOME/.config/ghostty/config"
-        print_success "Ghostty configured as default terminal"
-
-        # Setup Ghostty drop-down terminal script on Linux
-        if is_linux && [[ -f "$CONFIGS_DIR/scripts/ghostty-dropdown.sh" ]]; then
-            ensure_directory "$HOME/.local/bin"
-            cp -f "$CONFIGS_DIR/scripts/ghostty-dropdown.sh" "$HOME/.local/bin/ghostty-dropdown"
-            chmod +x "$HOME/.local/bin/ghostty-dropdown"
-            print_success "Ghostty drop-down script installed"
-
-            # Create desktop file for KDE shortcut
-            if is_kde_plasma; then
-                ensure_directory "$HOME/.local/share/applications"
-                cat > "$HOME/.local/share/applications/ghostty-dropdown.desktop" << 'EOF'
+    # Ghostty drop-down terminal on KDE; the script itself comes from links.txt
+    if is_linux && is_kde_plasma; then
+        ensure_directory "$HOME/.local/share/applications"
+        cat > "$HOME/.local/share/applications/ghostty-dropdown.desktop" << EOF
 [Desktop Entry]
 Name=Ghostty Dropdown Terminal
 Comment=Toggle drop-down terminal (Quake-style)
@@ -212,25 +195,13 @@ Type=Application
 Categories=Utility;TerminalEmulator;
 NoDisplay=true
 EOF
-                # Fix the $HOME in Exec path
-                sed -i "s|\$HOME|$HOME|g" "$HOME/.local/share/applications/ghostty-dropdown.desktop"
-                update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+        update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
 
-                # Configure F12 shortcut
-                local kwrite_cmd="kwriteconfig5"
-                command_exists kwriteconfig6 && kwrite_cmd="kwriteconfig6"
-                "$kwrite_cmd" --file kglobalshortcutsrc --group ghostty-dropdown.desktop --key _launch "F12,F12,Ghostty Dropdown Terminal"
+        local kwrite_cmd="kwriteconfig5"
+        command_exists kwriteconfig6 && kwrite_cmd="kwriteconfig6"
+        "$kwrite_cmd" --file kglobalshortcutsrc --group ghostty-dropdown.desktop --key _launch "F12,F12,Ghostty Dropdown Terminal"
 
-                print_success "Ghostty dropdown shortcut configured (F12)"
-            fi
-        fi
-    fi
-
-    # Configure Kitty (fallback)
-    if command_exists kitty && [[ -f "$CONFIGS_DIR/kitty.conf" ]]; then
-        ensure_directory "$HOME/.config/kitty"
-        cp -f "$CONFIGS_DIR/kitty.conf" "$HOME/.config/kitty/kitty.conf"
-        [[ -f "$CONFIGS_DIR/kitty-session.conf" ]] && cp -f "$CONFIGS_DIR/kitty-session.conf" "$HOME/.config/kitty/kitty-session.conf"
+        print_success "Ghostty dropdown shortcut configured (F12)"
     fi
 
     # Install Nerd Fonts
@@ -245,14 +216,6 @@ EOF
         # Everything else on the command line comes from configs/mise/config.toml
         aur_install zsh eza btop procs tree procps-ng || true
         aur_install mtr nmap asciinema xan bandwhich noti wmctrl xdotool || true
-    fi
-
-    # Configure Yazi
-    if command_exists yazi && [[ -d "$CONFIGS_DIR/yazi" ]]; then
-        ensure_directory "$HOME/.config/yazi"
-        [[ -f "$CONFIGS_DIR/yazi/yazi.toml" ]] && cp -f "$CONFIGS_DIR/yazi/yazi.toml" "$HOME/.config/yazi/yazi.toml"
-        [[ -f "$CONFIGS_DIR/yazi/keymap.toml" ]] && cp -f "$CONFIGS_DIR/yazi/keymap.toml" "$HOME/.config/yazi/keymap.toml"
-        [[ -f "$CONFIGS_DIR/yazi/theme.toml" ]] && cp -f "$CONFIGS_DIR/yazi/theme.toml" "$HOME/.config/yazi/theme.toml"
     fi
 
     # Set Zsh as default shell
@@ -276,79 +239,6 @@ EOF
     if ! [[ -d "$ZINIT_HOME" ]]; then
         ensure_directory "$(dirname "$ZINIT_HOME")"
         git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME" || true
-    fi
-
-    # Install shell configurations
-    print_info "Installing shell configurations..."
-
-    # Install zshrc (already contains mise activation)
-    if [[ -f "$CONFIGS_DIR/zshrc" ]]; then
-        cp -f "$CONFIGS_DIR/zshrc" "$HOME/.zshrc"
-        print_success "Installed .zshrc"
-    fi
-
-    # Install aliases
-    if [[ -f "$CONFIGS_DIR/aliases.sh" ]]; then
-        ensure_directory "$HOME/.config/shell"
-        cp -f "$CONFIGS_DIR/aliases.sh" "$HOME/.config/shell/aliases.sh"
-        print_success "Installed aliases.sh"
-    fi
-
-    # Install project templates
-    if [[ -f "$CONFIGS_DIR/project-templates.sh" ]]; then
-        cp -f "$CONFIGS_DIR/project-templates.sh" "$HOME/.config/shell/project-templates.sh"
-        chmod +x "$HOME/.config/shell/project-templates.sh"
-        print_success "Installed project-templates.sh"
-    fi
-
-    # Install Starship prompt config
-    if [[ -f "$CONFIGS_DIR/starship.toml" ]]; then
-        ensure_directory "$HOME/.config"
-        cp -f "$CONFIGS_DIR/starship.toml" "$HOME/.config/starship.toml"
-        print_success "Installed starship.toml"
-    fi
-
-    # Install project template directory if exists
-    if [[ -d "$CONFIGS_DIR/project-templates" ]]; then
-        ensure_directory "$HOME/.config"
-        cp -rf "$CONFIGS_DIR/project-templates" "$HOME/.config/project-templates"
-        print_info "Project templates installed to ~/.config/project-templates"
-    fi
-
-    # Install tool configurations
-    for tool in btop lazygit topgrade ripgrep; do
-        if command_exists "$tool"; then
-            case "$tool" in
-                btop)
-                    [[ -f "$CONFIGS_DIR/btop.conf" ]] && ensure_directory "$HOME/.config/btop" && cp -f "$CONFIGS_DIR/btop.conf" "$HOME/.config/btop/btop.conf"
-                    ;;
-                lazygit)
-                    [[ -f "$CONFIGS_DIR/lazygit.yml" ]] && ensure_directory "$HOME/.config/lazygit" && cp -f "$CONFIGS_DIR/lazygit.yml" "$HOME/.config/lazygit/config.yml"
-                    ;;
-                topgrade)
-                    [[ -f "$CONFIGS_DIR/topgrade.toml" ]] && ensure_directory "$HOME/.config/topgrade" && cp -f "$CONFIGS_DIR/topgrade.toml" "$HOME/.config/topgrade/topgrade.toml"
-                    ;;
-                ripgrep)
-                    [[ -f "$CONFIGS_DIR/ripgreprc" ]] && cp -f "$CONFIGS_DIR/ripgreprc" "$HOME/.ripgreprc"
-                    ;;
-            esac
-        fi
-    done
-
-    # Install vivid theme
-    if command_exists vivid && [[ -f "$CONFIGS_DIR/tokyonight-storm.yml" ]]; then
-        ensure_directory "$HOME/.config/vivid/themes"
-        cp -f "$CONFIGS_DIR/tokyonight-storm.yml" "$HOME/.config/vivid/themes/tokyonight-storm.yml"
-    fi
-
-    # .zshrc caches tool init scripts keyed on each binary; the vivid output
-    # also depends on the theme above, so make the next shell rebuild them
-    rm -f "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/*.key
-
-    # Configure herdr
-    if command_exists herdr && [[ -f "$CONFIGS_DIR/herdr/config.toml" ]]; then
-        ensure_directory "$HOME/.config/herdr"
-        cp -f "$CONFIGS_DIR/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     fi
 
     # Install Tokyo Night themes for installed tools
@@ -377,22 +267,6 @@ setup_rofi() {
 
     # Install Wayland screenshot/clipboard tools
     aur_install grim slurp wl-clipboard cliphist || true
-
-    # Copy rofi configuration
-    if [[ -d "$CONFIGS_DIR/rofi" ]]; then
-        ensure_directory "$HOME/.config/rofi"
-        ensure_directory "$HOME/.config/rofi/scripts"
-
-        cp -f "$CONFIGS_DIR/rofi/config.rasi" "$HOME/.config/rofi/config.rasi"
-
-        # Copy and make scripts executable
-        if [[ -d "$CONFIGS_DIR/rofi/scripts" ]]; then
-            cp -f "$CONFIGS_DIR/rofi/scripts/"*.sh "$HOME/.config/rofi/scripts/" 2>/dev/null || true
-            chmod +x "$HOME/.config/rofi/scripts/"*.sh 2>/dev/null || true
-        fi
-
-        print_success "Rofi configuration installed"
-    fi
 
     # Setup cliphist to run with Wayland session
     if command_exists cliphist; then

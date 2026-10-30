@@ -146,10 +146,8 @@ setup_gaming_network() {
         aur_install miniupnpc || print_warning "Could not install miniupnpc"
     fi
 
-    ensure_directory "$HOME/.local/bin"
     for tool in game-firewall gamenet; do
-        cp -f "$CONFIGS_DIR/scripts/${tool}.sh" "$HOME/.local/bin/$tool"
-        chmod +x "$HOME/.local/bin/$tool"
+        link_config "scripts/${tool}.sh" "$HOME/.local/bin/$tool"
     done
     print_success "Installed game-firewall and gamenet to ~/.local/bin"
 

@@ -58,12 +58,16 @@ export NC='\033[0m' # No Color
 
 # shellcheck source=lib/core.sh
 source "$SCRIPT_DIR/lib/core.sh"
+# shellcheck source=lib/links.sh
+source "$SCRIPT_DIR/lib/links.sh"
 # shellcheck source=modules/preflight.sh
 source "$SCRIPT_DIR/modules/preflight.sh"
 # shellcheck source=modules/system.sh
 source "$SCRIPT_DIR/modules/system.sh"
 # shellcheck source=modules/mise.sh
 source "$SCRIPT_DIR/modules/mise.sh"
+# shellcheck source=modules/dotfiles.sh
+source "$SCRIPT_DIR/modules/dotfiles.sh"
 # shellcheck source=modules/terminal.sh
 source "$SCRIPT_DIR/modules/terminal.sh"
 # shellcheck source=modules/choices.sh
@@ -117,6 +121,7 @@ main() {
     preflight_checks
     collect_choices
     setup_mise
+    setup_dotfiles
     setup_system_optimizations
     setup_terminal_and_shell
     setup_git

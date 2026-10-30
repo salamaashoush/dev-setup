@@ -139,15 +139,17 @@ ensure_directory() {
     fi
 }
 
+BACKUP_DIR="$HOME/.dev-setup-backup/$(date +%Y%m%d_%H%M%S)"
+
+# The backup mirrors the path under $HOME, so ghostty/config and bat/config
+# cannot overwrite each other.
 backup_file() {
     local file="$1"
-    if [[ -e "$file" ]]; then
-        local backup_dir
-        backup_dir="$HOME/.dev-setup-backup/$(date +%Y%m%d_%H%M%S)"
-        ensure_directory "$backup_dir"
-        cp -r "$file" "$backup_dir/$(basename "$file")"
-        print_info "Backed up $file"
-    fi
+    [[ -e "$file" || -L "$file" ]] || return 0
+    local rel="${file#"$HOME"/}"
+    ensure_directory "$BACKUP_DIR/$(dirname "$rel")"
+    cp -RP "$file" "$BACKUP_DIR/$rel"
+    print_info "Backed up $file to $BACKUP_DIR"
 }
 
 aur_install() {

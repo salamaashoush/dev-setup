@@ -110,9 +110,11 @@ Upgrade everything with `topgrade`, or separately with `mise up` and
 
 ## Making it yours
 
-`install.sh` overwrites the config files it ships each time it runs (it backs
-up `~/.zshrc`, `~/.gitconfig` and the Kitty config first, to
-`~/.dev-setup-backup/`). Keep personal changes where it never writes:
+Dotfiles are symlinks into `configs/`, listed in `configs/links.txt`, so an
+edit to `~/.zshrc` is an edit to this repo and shows up in `git diff`. The first
+run moves any real file it replaces to `~/.dev-setup-backup/<date>/`. Apps that
+rewrite their own config (btop, Colima) are seeded once instead. Keep changes
+for one machine where nothing is linked:
 
 - `~/.zshrc.local` for shell settings, sourced last
 - `~/.config/mise/conf.d/local.toml` for tools only this machine should have
@@ -123,8 +125,11 @@ up `~/.zshrc`, `~/.gitconfig` and the Kitty config first, to
 
 ```
 bootstrap.sh            fresh-machine entry point (bash 3.2 safe)
-install.sh              the installer
+install.sh              the installer: flags, step order
+lib/                    shared helpers and the dotfile linker
+modules/                one file per install step
 configs/
+  links.txt             which dotfile goes where
   zshrc, aliases.sh     shell
   starship.toml         prompt
   ghostty.conf          terminal (kitty.conf as fallback)
