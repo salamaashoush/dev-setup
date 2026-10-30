@@ -5,27 +5,19 @@ FAILED_PACKAGES=()
 
 cleanup() {
     local exit_code=$?
-    if [[ $exit_code -ne 0 ]]; then
-        echo ""
-        echo -e "\033[0;31m✗ Installation failed with exit code $exit_code\033[0m"
-        if [[ -n "$INSTALL_LOG" && -f "$INSTALL_LOG" ]]; then
-            echo "Check the log file for details: $INSTALL_LOG"
-        fi
-        echo ""
+    if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
+        echo -e "${YELLOW}⚠${NC} These did not install: ${FAILED_PACKAGES[*]}"
+    fi
+    if [[ $exit_code -ne 0 && "${INSTALLING:-false}" == true ]]; then
+        echo -e "${RED}✗ Installation failed with exit code $exit_code${NC}"
+        [[ -f "$INSTALL_LOG" ]] && echo "Log: $INSTALL_LOG"
         echo "To retry, run: $0"
-        echo "For help, run: $0 --help"
     fi
 }
 
 error_handler() {
-    local line_no=$1
-    local error_code=$2
-    echo ""
-    echo -e "\033[0;31m✗ Error on line $line_no (exit code: $error_code)\033[0m"
-    if [[ "$CRITICAL_SECTION" == "true" ]]; then
-        echo "Error occurred during a critical section. System may be in an inconsistent state."
-        echo "Please review the changes and run the script again."
-    fi
+    local line_no=$1 error_code=$2 file=$3
+    echo -e "${RED}✗ $file:$line_no exited with $error_code${NC}"
 }
 
 print_header() {
@@ -161,9 +153,18 @@ aur_install() {
         aur_cmd="yay"
     else
         print_error "No AUR helper found (paru or yay). Skipping: $*"
+        FAILED_PACKAGES+=("$@")
         return 1
     fi
-    "$aur_cmd" -S --needed --noconfirm "$@"
+    "$aur_cmd" -S --needed --noconfirm "$@" && return 0
+
+    # As with brew_install: retry alone so one bad name does not sink the batch
+    local pkg failed=0
+    for pkg in "$@"; do
+        pacman -Q "$pkg" &>/dev/null && continue
+        "$aur_cmd" -S --needed --noconfirm "$pkg" || { FAILED_PACKAGES+=("$pkg"); failed=1; }
+    done
+    return "$failed"
 }
 
 # One renamed, removed, or disabled name makes Homebrew reject the whole batch,

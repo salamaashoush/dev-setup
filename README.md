@@ -32,9 +32,19 @@ command applies.
 
 `install.sh` asks everything at the start: your Git name and email, an SSH key
 passphrase, whether to install game development tools, whether to set up
-agent-kit, and on Linux whether to install gaming packages. After that it runs
-unattended and ends with a summary that lists any package that failed to
-install. Re-running it is safe and updates everything in place.
+agent-kit, and on Linux whether to install gaming packages. The answers are
+saved to `~/.config/dev-setup/choices`, so later runs ask nothing. After that
+it runs unattended, logs to `~/.local/state/dev-setup/`, and exits non-zero
+naming any package that failed. Re-running it is safe and updates everything in
+place.
+
+```bash
+./install.sh --yes                 # ask nothing: saved answers, then defaults
+./install.sh --only dotfiles,git   # run some steps (--list shows them)
+./install.sh --skip media,bolt     # run all but these
+./install.sh --doctor              # report drift from the repo, change nothing
+./install.sh --reconfigure         # ask the questions again
+```
 
 ## What you get
 
@@ -150,8 +160,11 @@ scripts/                git-clone-bare-for-worktrees
 
 ## Troubleshooting
 
-- **A package failed.** The summary at the end names it. Re-run `./install.sh`;
-  for mise tools, `mise install` retries just those.
+- **A package failed.** The run ends naming it and exits non-zero; the log is
+  in `~/.local/state/dev-setup/`. Re-run `./install.sh --only <step>`; for mise
+  tools, `mise install` retries just those.
+- **Something drifted.** `./install.sh --doctor` lists links that no longer
+  point into the repo and other checks, without changing anything.
 - **A tool is missing in a new shell.** Run `mise doctor`, then `exec zsh`. After
   replacing a tool by hand, `rm -rf ~/.cache/zsh` rebuilds the cached init.
 - **Zed shows the default theme.** The Tokyo Night extension installs on first

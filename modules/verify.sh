@@ -87,11 +87,7 @@ verify_installation() {
 
     if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
         echo ""
-        print_warning "Packages that failed to install:"
-        local pkg
-        for pkg in "${FAILED_PACKAGES[@]}"; do
-            print_warning "  $pkg"
-        done
+        print_warning "${#FAILED_PACKAGES[@]} package(s) failed to install; they are listed at the end"
         warnings=$((warnings + ${#FAILED_PACKAGES[@]}))
     fi
 
@@ -106,4 +102,65 @@ verify_installation() {
         print_error "Installation has $errors error(s) and $warnings warning(s)"
         print_info "Run the script again or install missing components manually"
     fi
+}
+
+# Read-only: compares this machine with the repo and changes nothing.
+run_doctor() {
+    print_header "Doctor"
+    local problems=0
+
+    print_info "Dotfiles (configs/links.txt)"
+    if check_links; then
+        print_success "Every link points into $CONFIGS_DIR"
+    else
+        problems=$((problems + 1))
+    fi
+
+    print_info "Git"
+    if git config --global --get-all include.path 2>/dev/null | grep -qxF "$CONFIGS_DIR/gitconfig"; then
+        print_success "~/.gitconfig includes configs/gitconfig"
+    else
+        print_warning "~/.gitconfig does not include $CONFIGS_DIR/gitconfig (run --only git)"
+        problems=$((problems + 1))
+    fi
+
+    print_info "mise"
+    if ! command_exists mise; then
+        print_warning "mise is not installed"
+        problems=$((problems + 1))
+    elif [[ "$(readlink "$HOME/.config/mise/config.toml")" != "$CONFIGS_DIR/mise/config.toml" ]]; then
+        print_warning "~/.config/mise/config.toml is not a link to configs/mise/config.toml (run --only mise)"
+        problems=$((problems + 1))
+    elif ! (cd "$HOME" && mise doctor >/dev/null 2>&1); then
+        print_warning "mise doctor reports problems; run it for details"
+        problems=$((problems + 1))
+    else
+        print_success "mise config linked and mise doctor is clean"
+    fi
+
+    print_info "Tools"
+    local tool
+    for tool in git zsh nvim fzf rg fd bat eza zoxide starship mise herdr cargo node claude; do
+        if ! command_exists "$tool"; then
+            print_warning "$tool is not on PATH"
+            problems=$((problems + 1))
+        fi
+    done
+    if [[ ! -f "${XDG_CONFIG_HOME:-$HOME/.config}/ripgrep/config" ]]; then
+        print_warning "ripgrep config is missing"
+        problems=$((problems + 1))
+    fi
+
+    if is_macos; then
+        print_info "Builds run faster once your terminal is a Developer Tool:"
+        print_info "  System Settings > Privacy & Security > Developer Tools, add the terminal"
+    fi
+
+    echo ""
+    if [[ $problems -eq 0 ]]; then
+        print_success "No drift found"
+    else
+        print_warning "$problems problem(s) found"
+    fi
+    [[ $problems -eq 0 ]]
 }

@@ -64,10 +64,14 @@ preflight_checks() {
 
         # Update system (prompt user first — unattended upgrades can break Arch/CachyOS)
         print_warning "System upgrade recommended before installing packages."
-        read -p "Run 'sudo pacman -Syu' now? [Y/n] " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            sudo pacman -Syu
+        local upgrade=""
+        ask_yes_no upgrade "Run 'sudo pacman -Syu' now?" true
+        if [[ "$upgrade" == true ]]; then
+            if can_ask; then
+                sudo pacman -Syu
+            else
+                sudo pacman -Syu --noconfirm
+            fi
         fi
 
         # Install AUR helper if missing (prefer paru on CachyOS, yay otherwise)

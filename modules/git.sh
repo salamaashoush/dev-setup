@@ -6,8 +6,12 @@ setup_ssh_key() {
     if [[ ! -f "$ssh_key" ]]; then
         mkdir -p "$HOME/.ssh"
         chmod 700 "$HOME/.ssh"
-        print_info "You can set a passphrase for extra security (press Enter for none)"
-        ssh-keygen -t ed25519 -C "$GIT_EMAIL" -f "$ssh_key"
+        if can_ask; then
+            print_info "You can set a passphrase for extra security (press Enter for none)"
+            ssh-keygen -t ed25519 -C "$GIT_EMAIL" -f "$ssh_key"
+        else
+            ssh-keygen -t ed25519 -C "$GIT_EMAIL" -f "$ssh_key" -N ""
+        fi
         chmod 600 "$ssh_key"
         chmod 644 "${ssh_key}.pub"
         print_info "SSH key generated. Public key:"

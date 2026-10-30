@@ -2,14 +2,14 @@
 # Cross-Platform Developer Setup Script
 # Supports macOS and Arch Linux (EndeavourOS, CachyOS)
 #
-# Usage: ./install.sh [--help]
+# Usage: ./install.sh [--yes] [--only STEPS] [--skip STEPS] [--doctor] [--help]
 #
 # This script is designed to be:
 # - Idempotent (safe to run multiple times)
 # - Non-destructive (backs up existing configs)
 # - Reversible (documents how to undo changes)
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # ==========================================
 # Bash Version Check
@@ -41,8 +41,7 @@ readonly CONFIG_DIR="${CONFIG_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/configs"
 readonly CONFIGS_DIR="$CONFIG_DIR"  # Alias for compatibility
 readonly SCRIPTS_DIR="${SCRIPTS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/scripts" && pwd)}"
 
-# Create log file
-INSTALL_LOG="$HOME/.dev-setup-install-$(date +%Y%m%d-%H%M%S).log"
+INSTALL_LOG="${XDG_STATE_HOME:-$HOME/.local/state}/dev-setup/install-$(date +%Y%m%d-%H%M%S).log"
 
 # ==========================================
 # Colors and Output Functions
@@ -89,15 +88,73 @@ source "$SCRIPT_DIR/modules/shortcuts.sh"
 # shellcheck source=modules/verify.sh
 source "$SCRIPT_DIR/modules/verify.sh"
 
-# Track if we're in the middle of a critical section
-CRITICAL_SECTION=false
-
 trap cleanup EXIT
-trap 'error_handler ${LINENO} $?' ERR
+trap 'error_handler "$LINENO" "$?" "${BASH_SOURCE[0]}"' ERR
 
-# ==========================================
-# Main Execution
-# ==========================================
+# Step name for --only and --skip, and the function that runs it, in order
+STEPS=(
+    "preflight:preflight_checks"
+    "mise:setup_mise"
+    "dotfiles:setup_dotfiles"
+    "system:setup_system_optimizations"
+    "terminal:setup_terminal_and_shell"
+    "git:setup_git"
+    "dev:setup_development_tools"
+    "apps:setup_productivity_apps"
+    "gaming-network:setup_gaming_network"
+    "gamedev:setup_game_development"
+    "cachyos:setup_cachyos_tuning"
+    "media:setup_advanced_tools"
+    "bolt:setup_bolt"
+    "verify:verify_installation"
+)
+ONLY_STEPS=""
+SKIP_STEPS=""
+
+usage() {
+    cat <<EOF
+Usage: $0 [options]
+
+Sets up macOS or Arch Linux for development. Safe to run again: dotfiles are
+links, packages already present are skipped, answers are remembered.
+
+Options:
+  -y, --yes          ask nothing; use saved answers, then defaults
+  --reconfigure      ask the setup questions again
+  --only STEPS       run only these steps (comma separated)
+  --skip STEPS       run every step except these
+  --list             list the steps
+  --doctor           check this machine against the repo and change nothing
+  -h, --help         show this help
+
+Answers are saved in $CHOICES_FILE. GIT_NAME, GIT_EMAIL, INSTALL_GAMING,
+INSTALL_GAMEDEV and INSTALL_AGENT_KIT in the environment override them.
+EOF
+}
+
+step_known() {
+    local name="$1" entry
+    for entry in "${STEPS[@]}"; do
+        [[ "${entry%%:*}" == "$name" ]] && return 0
+    done
+    return 1
+}
+
+check_step_list() {
+    local list="$1" name
+    local IFS=,
+    for name in $list; do
+        step_known "$name" || { print_error "Unknown step '$name' (see --list)"; exit 1; }
+    done
+}
+
+step_selected() {
+    local name="$1"
+    if [[ -n "$ONLY_STEPS" ]]; then
+        [[ ",$ONLY_STEPS," == *",$name,"* ]] || return 1
+    fi
+    [[ ",$SKIP_STEPS," != *",$name,"* ]]
+}
 
 main() {
     print_header "Developer Environment Setup"
@@ -116,27 +173,21 @@ main() {
     # tool the script runs stop at an untrusted-config error.
     cd "$HOME"
 
-    # Run all setup functions
     keep_sudo_alive
-    preflight_checks
+    # preflight installs Homebrew, but --only may skip it
+    if is_macos; then
+        load_brew_env || true
+    fi
+    # The answers feed several steps, so they are loaded even under --only
     collect_choices
-    setup_mise
-    setup_dotfiles
-    setup_system_optimizations
-    setup_terminal_and_shell
-    setup_git
-    setup_development_tools
-    setup_productivity_apps
-    setup_gaming_network
-    setup_game_development
-    setup_cachyos_tuning
-    setup_advanced_tools
-    setup_bolt
-    # DISABLED: Keyboard shortcuts - let user configure manually
-    # setup_keyboard_shortcuts
 
-    # Verify installation
-    verify_installation
+    local entry
+    for entry in "${STEPS[@]}"; do
+        if step_selected "${entry%%:*}"; then
+            "${entry#*:}"
+        fi
+    done
+    [[ -z "$ONLY_STEPS" ]] || return 0
 
     print_header "Setup Complete!"
     echo "Your Web/Rust/C++ development environment is ready!"
@@ -177,9 +228,9 @@ main() {
     echo
     print_info "A reboot is recommended to apply all changes (Docker group, KDE shortcuts, etc.)"
     echo
-    read -p "Would you like to reboot now? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    local reboot=""
+    can_ask && ask_yes_no reboot "Would you like to reboot now?" false
+    if [[ "$reboot" == true ]]; then
         print_info "Rebooting in 5 seconds... (Ctrl+C to cancel)"
         sleep 5
         sudo reboot
@@ -188,23 +239,38 @@ main() {
     fi
 }
 
-# Parse command line arguments
+RUN_DOCTOR=false
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --help|-h)
-            echo "Usage: $0"
-            echo ""
-            echo "This script sets up a complete development environment."
-            echo "No options are required - just run ./install.sh"
+        -y|--yes) ASSUME_YES=true ;;
+        --reconfigure) RECONFIGURE=true ;;
+        --only) ONLY_STEPS="${2:?--only needs a list of steps}"; shift ;;
+        --skip) SKIP_STEPS="${2:?--skip needs a list of steps}"; shift ;;
+        --list)
+            for entry in "${STEPS[@]}"; do echo "${entry%%:*}"; done
             exit 0
             ;;
+        --doctor) RUN_DOCTOR=true ;;
+        -h|--help) usage; exit 0 ;;
         *)
             echo "Unknown option: $1"
             echo "Run $0 --help for usage"
             exit 1
             ;;
     esac
+    shift
 done
+check_step_list "$ONLY_STEPS"
+check_step_list "$SKIP_STEPS"
 
-# Start the script
+if [[ "$RUN_DOCTOR" == true ]]; then
+    if run_doctor; then exit 0; else exit 1; fi
+fi
+
+ensure_directory "$(dirname "$INSTALL_LOG")"
+exec > >(tee -a "$INSTALL_LOG") 2>&1
+print_info "Logging to $INSTALL_LOG"
+INSTALLING=true
 main
+# cleanup lists what failed
+[[ ${#FAILED_PACKAGES[@]} -eq 0 ]] || exit 1
